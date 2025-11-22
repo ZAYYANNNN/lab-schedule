@@ -15,6 +15,8 @@ return Application::configure(basePath: dirname(__DIR__))
         // REGISTER ROUTE MIDDLEWARE
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,
+            'labaccess' => \App\Http\Middleware\LabAccess::class,
+
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

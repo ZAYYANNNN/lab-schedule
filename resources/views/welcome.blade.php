@@ -11,7 +11,11 @@
     <section class="min-h-screen flex flex-col justify-center items-center text-center px-6">
         <h1 class="text-5xl font-bold mb-4">Lab Schedule Management</h1>
         <p class="text-gray-300 max-w-2xl mb-8 text-lg">Sistem penjadwalan laboratorium untuk kampus Anda. Kelola lab, aset, dan jadwal secara efisien dengan akses berbasis role.</p>
-        <a href="/login" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-xl text-lg font-semibold">Login</a>
+        <a href="{{ route('login') }}"
+            class="px-6 py-3 bg-blue-600 text-white rounded-lg">
+            Login
+        </a>
+
     </section>
 
     <!-- FEATURES -->

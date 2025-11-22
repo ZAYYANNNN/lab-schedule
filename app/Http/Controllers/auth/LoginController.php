@@ -38,7 +38,14 @@ class LoginController extends Controller
             return redirect('/admin/dashboard');
         }
 
+        return match ($user->role) {
+            'superadmin' => redirect()->route('superadmin.dashboard'),
+            'admin'      => redirect()->route('admin.dashboard'),
+            default      => redirect()->route('dashboard'),
+        };
+
         return redirect('/');
+
     }
 
     public function logout(Request $request)
