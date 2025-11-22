@@ -2,6 +2,11 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\LabController;
+use App\Http\Controllers\LabAssetController;
+use App\Http\Controllers\ScheduleController;
+use App\Http\Controllers\ProfileController;
+
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', function () {
@@ -37,9 +42,6 @@ Route::middleware(['auth', 'role:superadmin'])->group(function () {
             // ASSETS (SEMUA LAB)
             Route::get('/assets', [LabAssetController::class, 'allAssets'])
                 ->name('assets.index');
-            
-            Route::get('/pendaftaran', [LabAssetController::class, 'allPendftaran'])
-                ->name('pendaftaran.index');
         });
 
 

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Lab;
+use App\Models\Assetlab;
 use Illuminate\Http\Request;
 
 class LabController extends Controller
@@ -10,7 +11,7 @@ class LabController extends Controller
     // Tampilkan semua lab
     public function index()
     {
-        $labs = Lab::all();
+        $labs = lab::all();
         return view('superadmin.labs.index', compact('labs'));
     }
 
