@@ -17,6 +17,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('prodi_id')->constrained('prodis')->cascadeOnDelete();
             $table->string('name');
+            $table->string('prodi');
             $table->string('location')->nullable();
             $table->text('description')->nullable();
             $table->timestamps();
