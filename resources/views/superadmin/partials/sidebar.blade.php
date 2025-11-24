@@ -1,5 +1,7 @@
 <aside class="w-64 h-screen bg-white border-r flex flex-col">
 
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
+
     <!-- HEADER LOGO + ROLE -->
     <div class="px-6 py-6 border-b">
         <div class="flex items-center space-x-3">
@@ -27,11 +29,9 @@
         <a href="{{ route('superadmin.dashboard') }}"
             class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-100 
                 {{ request()->routeIs('superadmin.dashboard') ? 'bg-blue-50 text-blue-600' : 'text-gray-700' }}">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5"
-                fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                    d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
+            <span class="material-symbols-outlined">
+                dashboard
+            </span>
             <span>Dashboard</span>
         </a>
 
@@ -39,22 +39,18 @@
         <a href="{{ route('superadmin.jadwal.index') }}"
             class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-100 
                 {{ request()->routeIs('superadmin.jadwal.*') ? 'bg-blue-50 text-blue-600' : 'text-gray-700' }}">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5"
-                fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
-                      d="M8 7V3m8 4V3M5 11h14M5 19h14M5 11v8m14-8v8" />
-            </svg>
+            <span class="material-symbols-outlined">
+                calendar_add_on
+            </span>
             <span>Jadwal Lab</span>
         </a>
         <!-- Daftar Lab -->
         <a href="{{ route('superadmin.labs.index') }}"
             class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-100 
                 {{ request()->routeIs('superadmin.labs.*') ? 'bg-blue-50 text-blue-600' : 'text-gray-700' }}">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5"
-                fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
-                      d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
+            <span class="material-symbols-outlined">
+                lab_panel
+            </span>
             <span>Daftar Lab</span>
         </a>
 
@@ -62,11 +58,9 @@
         <a href="{{ route('superadmin.assets.index') }}"
             class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-100 
                 {{ request()->routeIs('superadmin.assets.*') ? 'bg-blue-50 text-blue-600' : 'text-gray-700' }}">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5"
-                fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
-                      d="M12 6v12m6-6H6" />
-            </svg>
+            <span class="material-symbols-outlined">
+                inventory_2
+            </span>
             <span>Daftar Aset Lab</span>
         </a>
 

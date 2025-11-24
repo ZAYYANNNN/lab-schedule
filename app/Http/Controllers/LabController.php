@@ -3,64 +3,113 @@
 namespace App\Http\Controllers;
 
 use App\Models\Lab;
-use App\Models\Assetlab;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 
 class LabController extends Controller
 {
-    // Tampilkan semua lab
-    public function index()
+    public function index(Request $r)
     {
-        $labs = lab::all();
+        $q = $r->search;
+
+        $query = Lab::select(['id','name','kode_lab','lokasi','prodi','kapasitas','pj','status','foto'])
+            ->when($q, function($query) use ($q) {
+                $query->where('name', 'like', "%{$q}%")
+                    ->orWhere('kode_lab', 'like', "%{$q}%")
+                    ->orWhere('lokasi', 'like', "%{$q}%");
+            })
+            ->orderBy('name')
+            ->limit(50); // batasi
+
+        $labs = $query->get();
+
+        if ($r->ajax) {
+            return response()->json($labs);
+        }
+
         return view('superadmin.labs.index', compact('labs'));
     }
 
-    // Form tambah
-    public function create()
-    {
-        return view('superadmin.labs.create');
-    }
 
-    // Simpan data
-    public function store(Request $request)
+    public function store(Request $r)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'kode' => 'required|string|max:50|unique:labs',
+        $r->validate([
+            'name'      => 'required|string|max:255',
+            'kode_lab'  => 'required|string|max:255',
+            'lokasi'    => 'required|string',
+            'prodi'     => 'nullable|string',
+            'kapasitas' => 'required|integer|min:1',
+            'pj'        => 'nullable|string',
+            'status'    => 'required|in:Tersedia,Digunakan,Rusak',
+            'foto'      => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
         ]);
 
-        Lab::create($request->only('name', 'kode'));
-
-        return redirect()->route('superadmin.labs.index')
-                         ->with('success', 'Lab berhasil ditambahkan.');
-    }
-
-    // Form edit
-    public function edit(Lab $lab)
-    {
-        return view('superadmin.labs.edit', compact('lab'));
-    }
-
-    // Update data
-    public function update(Request $request, Lab $lab)
-    {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'kode' => 'required|string|max:50|unique:labs,kode,' . $lab->id,
+        $data = $r->only([
+            'name','kode_lab','lokasi','prodi','kapasitas','pj','status'
         ]);
 
-        $lab->update($request->only('name', 'kode'));
+        // UUID WAJIB DISET
+        $data['id'] = Str::uuid();
 
-        return redirect()->route('superadmin.labs.index')
-                         ->with('success', 'Lab berhasil diperbarui.');
+        // FOTO
+        if ($r->hasFile('foto')) {
+            $file = $r->file('foto');
+            $filename = Str::slug($r->name).'_'.time().'.'.$file->getClientOriginalExtension();
+            $path = $file->storeAs('labs', $filename, 'public');
+            $data['foto'] = $path;
+        }
+
+        Lab::create($data);
+
+        return back()->with('success', 'Lab berhasil ditambahkan');
     }
 
-    // Hapus data
+    public function update(Request $r, Lab $lab)
+    {
+        $r->validate([
+            'name'      => 'required|string|max:255',
+            'kode_lab'  => 'required|string|max:255',
+            'lokasi'    => 'required|string',
+            'prodi'     => 'nullable|string',
+            'kapasitas' => 'required|integer|min:1',
+            'pj'        => 'nullable|string',
+            'status'    => 'required|in:Tersedia,Digunakan,Rusak',
+            'foto'      => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
+        ]);
+
+        $data = $r->only([
+            'name','kode_lab','lokasi','prodi','kapasitas','pj','status'
+        ]);
+
+        // UPDATE FOTO (hapus lama dulu)
+        if ($r->hasFile('foto')) {
+
+            if ($lab->foto && Storage::disk('public')->exists($lab->foto)) {
+                Storage::disk('public')->delete($lab->foto);
+            }
+
+            $file = $r->file('foto');
+            $filename = Str::slug($r->name).'_'.time().'.'.$file->getClientOriginalExtension();
+            $path = $file->storeAs('labs', $filename, 'public');
+
+            $data['foto'] = $path;
+        }
+
+        $lab->update($data);
+
+        return back()->with('success', 'Lab berhasil diupdate');
+    }
+
     public function destroy(Lab $lab)
     {
+        // Hapus foto juga
+        if ($lab->foto && Storage::disk('public')->exists($lab->foto)) {
+            Storage::disk('public')->delete($lab->foto);
+        }
+
         $lab->delete();
 
-        return redirect()->route('superadmin.labs.index')
-                         ->with('success', 'Lab berhasil dihapus.');
+        return back()->with('success', 'Lab berhasil dihapus');
     }
 }

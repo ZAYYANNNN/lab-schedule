@@ -12,17 +12,14 @@ return new class extends Migration
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->string('prodi');
             $table->string('email')->unique();
             $table->string('password');
+            $table->timestamps();
+
 
             $table->enum('role', ['superadmin', 'admin'])->default('admin');
 
-            $table->foreignId('prodi_id')
-                ->nullable()
-                ->constrained('prodis')
-                ->nullOnDelete();
-
-            $table->timestamps();
         });
 
         // FORGOT PASSWORD TOKENS

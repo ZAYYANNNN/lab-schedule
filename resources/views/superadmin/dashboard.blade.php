@@ -1,4 +1,4 @@
-<x-superadmin-layout :title="'Dashboard'" :header="'Dashboard'">
+<x-app-layout :title="'Dashboard'" :header="'Dashboard'">
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
 
@@ -22,4 +22,4 @@
 
     </div>
 
-</x-superadmin-layout>
+</x-app-layout>

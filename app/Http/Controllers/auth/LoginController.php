@@ -20,7 +20,6 @@ class LoginController extends Controller
             'password' => 'required'
         ]);
 
-        // Attempt login
         if (!Auth::attempt($request->only('email', 'password'), $request->boolean('remember'))) {
             return back()->withErrors([
                 'email' => 'Email atau password salah.',
@@ -28,25 +27,15 @@ class LoginController extends Controller
         }
 
         $request->session()->regenerate();
-
-        // ARAHIN SESUAI ROLE
-        if (auth()->user()->role === 'superadmin') {
-            return redirect('/superadmin/dashboard');
-        }
-
-        if (auth()->user()->role === 'admin') {
-            return redirect('/admin/dashboard');
-        }
+        $user = auth()->user();
 
         return match ($user->role) {
             'superadmin' => redirect()->route('superadmin.dashboard'),
             'admin'      => redirect()->route('admin.dashboard'),
-            default      => redirect()->route('dashboard'),
+            default      => redirect('/'),
         };
-
-        return redirect('/');
-
     }
+
 
     public function logout(Request $request)
     {

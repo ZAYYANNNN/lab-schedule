@@ -3,14 +3,27 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
-class lab extends Model
+class Lab extends Model
 {
-    protected $fillable = ['name', 'prodi_id', 'location', 'description'];
+    use HasUuids;
 
-    public function prodi()
+    public $incrementing = false;
+    protected $keyType = 'string';
+
+    protected $fillable = [
+        'name', 'kode_lab', 'lokasi', 'prodi', 'kapasitas',
+        'pj', 'status', 'foto'
+    ];
+
+    protected static function boot()
     {
-        return $this->belongsTo(Prodi::class);
+        parent::boot();
+        static::creating(function ($model) {
+            $model->id = Str::uuid()->toString();
+        });
     }
 
     public function assets()

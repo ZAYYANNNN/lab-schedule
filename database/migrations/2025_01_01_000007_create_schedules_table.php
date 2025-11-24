@@ -11,17 +11,23 @@ return new class extends Migration
      */
     public function up()
     {
-         Schema::create('schedules', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('lab_id')->constrained('labs')->cascadeOnDelete();
-            $table->foreignId('created_by')->constrained('users')->cascadeOnDelete();
+        Schema::create('schedules', function (Blueprint $table) {
+            $table->uuid('id')->primary();
+            $table->uuid('lab_id');
+            $table->foreignId('created_by')->constrained('users')->cascadeOnDelete(); // ini boleh unsigned
+
             $table->date('date');
             $table->time('start_time');
             $table->time('end_time');
-            $table->string('activity'); // nama kegiatan, praktikum, penelitian, dll.
+            $table->string('activity');
+
             $table->timestamps();
+
+            $table->foreign('lab_id')->references('id')->on('labs')->cascadeOnDelete();
         });
+
     }
+
 
 
     /**

@@ -8,114 +8,102 @@ use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\ProfileController;
 
 
+Route::get('/', function () {
+    if (auth()->check()) {
+        return redirect('/dashboard');
+    }
+    return view('welcome');
+});
+
+// Dashboard untuk user yang SUDAH login
+Route::get('/dashboard', function () {
+    return view('superadmin.dashboard'); 
+})->middleware(['auth'])->name('dashboard');
+
+require __DIR__.'/auth.php';
+
+
+Route::get('/check', function () {
+    return auth()->check() ? 'LOGGED IN' : 'NOT LOGGED IN';
+});
+
+
+
+// ==============================
+// AUTH AREA
+// ==============================
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
+    Route::post('/login', [LoginController::class, 'login'])->name('login.post');
+});
+
+Route::post('/logout', [LoginController::class, 'logout'])
+    ->middleware('auth')
+    ->name('logout');
+
+
+// ==============================
+// PROFILE (AUTH ONLY)
+// ==============================
 Route::middleware('auth')->group(function () {
     Route::get('/profile', function () {
         return 'halaman profile';
     })->name('profile.edit');
 });
 
-Route::middleware('guest')->group(function () {
-    Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
-    Route::post('/login', [LoginController::class, 'login'])->name('login.post');
-});
 
-// LOGOUT
-Route::post('/logout', [LoginController::class, 'logout'])
-    ->middleware('auth')
-    ->name('logout');
-
+// ==============================
 // SUPERADMIN AREA
-Route::middleware(['auth', 'role:superadmin'])->group(function () {
+// ==============================
+Route::middleware(['auth', 'role:superadmin'])
+    ->prefix('superadmin')
+    ->name('superadmin.')
+    ->group(function () {
 
-    Route::prefix('superadmin')
-        ->name('superadmin.')
-        ->middleware(['auth', 'role:superadmin'])
-        ->group(function () {
+        Route::get('/dashboard', fn() => view('superadmin.dashboard'))
+            ->name('dashboard');
 
-            // Dashboard
-            Route::get('/dashboard', fn() => view('superadmin.dashboard'))
-                ->name('dashboard');
+        // LABS (superadmin version - prefix berbeda)
+        Route::resource('labs', LabController::class);
 
-            // LAB CRUD
-            Route::resource('labs', LabController::class);
+        // ASSETS (global - tidak nested)
+        Route::get('/assets', [LabAssetController::class, 'index'])->name('assets.index');
+        Route::post('/assets', [LabAssetController::class, 'store'])->name('assets.store');
+        Route::put('/assets/{asset}', [LabAssetController::class, 'update'])->name('assets.update');
+        Route::delete('/assets/{asset}', [LabAssetController::class, 'destroy'])->name('assets.destroy');
 
-            // ASSETS (SEMUA LAB)
-            Route::get('/assets', [LabAssetController::class, 'allAssets'])
-                ->name('assets.index');
-        });
-
-
-    /**
-     * LAB MANAGEMENT (Superadmin bisa kelola semua lab)
-     */
-    Route::prefix('superadmin')
-        ->name('superadmin.')
-        ->middleware(['auth', 'role:superadmin'])
-        ->group(function () {
-
-            Route::resource('labs', LabController::class);
-        });
+        // JADWAL (global - tidak nested)
+        Route::get('/jadwal', [ScheduleController::class, 'index'])->name('jadwal.index');
+        Route::post('/jadwal', [ScheduleController::class, 'store'])->name('jadwal.store');
+        Route::put('/jadwal/{schedule}', [ScheduleController::class, 'update'])->name('jadwal.update');
+        Route::delete('/jadwal/{schedule}', [ScheduleController::class, 'destroy'])->name('jadwal.destroy');
+    });
 
 
-    /**
-     * LAB ASSET
-     */
-    Route::get('/superadmin/jadwal', [ScheduleController::class, 'allLabs'])
-        ->name('superadmin.jadwal.index');
 
-
-    Route::post('/superadmin/labs/{lab}/assets', [LabAssetController::class, 'store'])
-        ->name('superadmin.labs.assets.store');
-
-    Route::put('/superadmin/labs/{lab}/assets/{asset}', [LabAssetController::class, 'update'])
-        ->name('superadmin.labs.assets.update');
-
-    Route::delete('/superadmin/labs/{lab}/assets/{asset}', [LabAssetController::class, 'destroy'])
-        ->name('superadmin.labs.assets.destroy');
-
-    /**
-     * LAB SCHEDULE
-     */
-    Route::get('/superadmin/labs/{lab}/schedule', [ScheduleController::class, 'index'])
-        ->name('superadmin.labs.schedule.index');
-
-    Route::post('/superadmin/labs/{lab}/schedule', [ScheduleController::class, 'store'])
-        ->name('superadmin.labs.schedule.store');
-
-    Route::put('/superadmin/labs/{lab}/schedule/{schedule}', [ScheduleController::class, 'update'])
-        ->name('superadmin.labs.schedule.update');
-
-    Route::delete('/superadmin/labs/{lab}/schedule/{schedule}', [ScheduleController::class, 'destroy'])
-        ->name('superadmin.labs.schedule.destroy');
-});
-
-
+// ==============================
 // ADMIN AREA
-Route::middleware(['auth', 'role:admin', 'labaccess'])->group(function () {
+// ==============================
+Route::middleware(['auth', 'role:admin', 'labaccess'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
 
-    Route::get('/admin/dashboard', fn() => view('admin.dashboard'))
-        ->name('admin.dashboard');
+        Route::get('/dashboard', fn() => view('admin.dashboard'))
+            ->name('dashboard');
 
-    // DAFTAR LAB (resource)
-    Route::resource('labs', LabController::class);
+        // DAFTAR LAB ADMIN
+        Route::resource('labs', LabController::class);
 
-    // ASET LAB
-    Route::get('/labs/{lab}/assets', [LabAssetController::class, 'index'])
-        ->name('labs.assets.index');
-    Route::post('/labs/{lab}/assets', [LabAssetController::class, 'store'])
-        ->name('labs.assets.store');
-    Route::put('/labs/{lab}/assets/{asset}', [LabAssetController::class, 'update'])
-        ->name('labs.assets.update');
-    Route::delete('/labs/{lab}/assets/{asset}', [LabAssetController::class, 'destroy'])
-        ->name('labs.assets.destroy');
+        // ASSETS PER-LAB (nested)
+        Route::get('/labs/{lab}/assets', [LabAssetController::class, 'index'])->name('labs.assets.index');
+        Route::post('/labs/{lab}/assets', [LabAssetController::class, 'store'])->name('labs.assets.store');
+        Route::put('/labs/{lab}/assets/{asset}', [LabAssetController::class, 'update'])->name('labs.assets.update');
+        Route::delete('/labs/{lab}/assets/{asset}', [LabAssetController::class, 'destroy'])->name('labs.assets.destroy');
 
-    // JADWAL LAB
-    Route::get('/labs/{lab}/schedule', [ScheduleController::class, 'index'])
-        ->name('labs.schedule.index');
-    Route::post('/labs/{lab}/schedule', [ScheduleController::class, 'store'])
-        ->name('labs.schedule.store');
-    Route::put('/labs/{lab}/schedule/{schedule}', [ScheduleController::class, 'update'])
-        ->name('labs.schedule.update');
-    Route::delete('/labs/{lab}/schedule/{schedule}', [ScheduleController::class, 'destroy'])
-        ->name('labs.schedule.destroy');
-});
+        // JADWAL PER-LAB (nested)
+        Route::get('/labs/{lab}/schedule', [ScheduleController::class, 'index'])->name('labs.schedule.index');
+        Route::post('/labs/{lab}/schedule', [ScheduleController::class, 'store'])->name('labs.schedule.store');
+        Route::put('/labs/{lab}/schedule/{schedule}', [ScheduleController::class, 'update'])->name('labs.schedule.update');
+        Route::delete('/labs/{lab}/schedule/{schedule}', [ScheduleController::class, 'destroy'])->name('labs.schedule.destroy');
+    });

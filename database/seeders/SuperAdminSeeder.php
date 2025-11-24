@@ -14,9 +14,9 @@ class SuperAdminSeeder extends Seeder
             ['email' => 'superadmin@campus.test'], // ganti kalau mau
             [
                 'name' => 'Super Admin',
+                'prodi' => '-',
                 'password' => Hash::make('password123'), // WAJIB ganti setelah login
                 'role' => 'superadmin',
-                'prodi_id' => null,
             ]
         );
     }

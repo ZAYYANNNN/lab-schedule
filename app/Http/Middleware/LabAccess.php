@@ -36,11 +36,6 @@ class LabAccess
             abort(403, 'No lab context.');
         }
 
-        // Cek prodi
-        if ($user->prodi_id !== $labId->prodi_id) {
-            abort(403, 'Forbidden.');
-        }
-
         return $next($request);
     }
 
