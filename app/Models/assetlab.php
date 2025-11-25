@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 
-class assetlab extends Model
+class AssetLab extends Model
 {
     protected $table = 'aset_labs';
     protected $fillable = ['lab_id', 'name', 'quantity', 'condition', 'description'];

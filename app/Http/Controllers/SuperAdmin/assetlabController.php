@@ -14,7 +14,7 @@ class AssetLabController extends Controller
     public function index()
     {
         // Superadmin melihat semua aset dari seluruh Lab dan Prodi
-        $assets = assetlab::with('lab.prodi') // Eager load Lab dan Prodi
+        $assets = Assetlab::with('lab.prodi') // Eager load Lab dan Prodi
                  ->latest()
                  ->paginate(20);
 
@@ -24,7 +24,7 @@ class AssetLabController extends Controller
     /**
      * Menampilkan detail Aset Lab.
      */
-    public function show(assetlab $asetlab)
+    public function show(Assetlab $asetlab)
     {
         return view('superadmin.asetlab.show', compact('asetlab'));
     }

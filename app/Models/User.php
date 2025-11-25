@@ -7,11 +7,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 class User extends Authenticatable
 {
     protected $fillable = [
-        'name', 'email', 'password', 'role', 'prodi_id'
+        'name', 'email', 'password', 'role', 'prodi'
     ];
 
-    public function prodi()
-    {
-        return $this->belongsTo(Prodi::class);
-    }
 }

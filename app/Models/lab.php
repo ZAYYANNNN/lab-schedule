@@ -3,34 +3,36 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class Lab extends Model
 {
-    protected $table = 'labs';
-    protected $fillable = ['name', 'prodi_id', 'location', 'description'];
+    use HasUuids;
 
-    public function prodi()
+    public $incrementing = false;
+    protected $keyType = 'string';
+
+    protected $fillable = [
+        'name', 'kode_lab', 'lokasi', 'prodi', 'kapasitas',
+        'pj', 'status', 'foto'
+    ];
+
+    protected static function boot()
     {
-        return $this->belongsTo(Prodi::class);
+        parent::boot();
+        static::creating(function ($model) {
+            $model->id = Str::uuid()->toString();
+        });
     }
 
     public function assets()
     {
-        return $this->hasMany(assetLab::class, 'lab_id');
+        return $this->hasMany(Assetlab::class);
     }
 
     public function schedules()
     {
-        return $this->hasMany(Schedules::class, 'lab_id');
-    }
-
-    /**
-     * Scope untuk filter Lab berdasarkan prodi user yang login
-     */
-    public function scopeByProdi(Builder $query, $prodiId = null)
-    {
-        $prodiId = $prodiId ?? auth()->user()->prodi_id;
-        return $query->where('prodi_id', $prodiId);
+        return $this->hasMany(Schedules::class);
     }
 }

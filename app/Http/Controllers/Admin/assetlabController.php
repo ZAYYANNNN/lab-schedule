@@ -20,7 +20,7 @@ class assetlabController extends Controller
         $labIds = Lab::where('prodi_id', $userProdiId)->pluck('id');
 
         // Ambil semua aset yang lab_id-nya ada di $labIds
-        $assets = assetlab::whereIn('lab_id', $labIds)
+        $assets = Assetlab::whereIn('lab_id', $labIds)
                          ->with('lab')
                          ->latest()
                          ->paginate(15);
@@ -65,7 +65,7 @@ class assetlabController extends Controller
             abort(403, 'Akses Ditolak. Lab tidak valid atau bukan milik Prodi Anda.');
         }
         
-        assetlab::create($validated);
+        Assetlab::create($validated);
 
         return redirect()->route('admin.assetlab.index')
                          ->with('success', 'Aset Lab berhasil ditambahkan.');
@@ -74,7 +74,7 @@ class assetlabController extends Controller
     /**
      * Menampilkan form untuk mengedit Aset Lab.
      */
-    public function edit(assetlab $assetlab)
+    public function edit(Assetlab $assetlab)
     {
         // --- VERIFIKASI KEPEMILIKAN ASET (KRUSIAL) ---
         if ($assetlab->lab->prodi_id !== auth()->user()->prodi_id) {
@@ -88,7 +88,7 @@ class assetlabController extends Controller
     /**
      * Memperbarui Aset Lab.
      */
-    public function update(Request $request, assetlab $assetlab)
+    public function update(Request $request, Assetlab $assetlab)
     {
         // --- VERIFIKASI KEPEMILIKAN ASET LAMA ---
         if ($assetlab->lab->prodi_id !== auth()->user()->prodi_id) {
@@ -118,7 +118,7 @@ class assetlabController extends Controller
     /**
      * Menghapus Aset Lab.
      */
-    public function destroy(assetlab $assetlab)
+    public function destroy(Assetlab $assetlab)
     {
         // --- VERIFIKASI KEPEMILIKAN ASET (KRUSIAL) ---
         if ($assetlab->lab->prodi_id !== auth()->user()->prodi_id) {

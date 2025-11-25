@@ -6,25 +6,21 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
-    public function up()
+    public function up(): void
     {
         Schema::create('aset_labs', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('lab_id')->constrained('labs')->cascadeOnDelete();
-            $table->string('name');
-            $table->integer('quantity')->default(1);
-            $table->string('condition')->nullable(); 
-            $table->string('description')->nullable();
+            $table->uuid('id')->primary();
+            $table->uuid('lab_id');
+            $table->string('nama');
+            $table->string('kode_aset')->nullable();
+            $table->integer('jumlah')->default(1);
             $table->timestamps();
+
+            $table->foreign('lab_id')->references('id')->on('labs')->cascadeOnDelete();
         });
+
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('aset_labs');

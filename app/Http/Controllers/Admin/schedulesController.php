@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\schedules; // Menggunakan nama model schedules
+use App\Models\Schedules; // Menggunakan nama model schedules
 use App\Models\Lab;
 use Illuminate\Validation\Rule;
 use Carbon\Carbon;
@@ -22,7 +22,7 @@ class schedulesController extends Controller
         $labIds = Lab::where('prodi_id', $userProdiId)->pluck('id');
 
         // Ambil jadwal yang lab_id-nya ada di $labIds
-        $schedules = schedules::whereIn('lab_id', $labIds)
+        $schedules = Schedules::whereIn('lab_id', $labIds)
                              ->with('lab', 'creator') // creator adalah relasi ke created_by (User)
                              ->orderBy('date', 'desc')
                              ->orderBy('start_time', 'asc')
@@ -80,7 +80,7 @@ class schedulesController extends Controller
         $data = $validated;
         $data['created_by'] = auth()->id();
         
-        schedules::create($data);
+        Schedules::create($data);
 
         return redirect()->route('admin.schedules.index')
                          ->with('success', 'Jadwal Lab berhasil ditambahkan.');
@@ -89,7 +89,7 @@ class schedulesController extends Controller
     /**
      * Menampilkan form untuk mengedit Jadwal Lab.
      */
-    public function edit(schedules $schedule)
+    public function edit(Schedules $schedule)
     {
         // --- VERIFIKASI KEPEMILIKAN JADWAL ---
         if ($schedule->lab->prodi_id !== auth()->user()->prodi_id) {
@@ -103,7 +103,7 @@ class schedulesController extends Controller
     /**
      * Memperbarui Jadwal Lab.
      */
-    public function update(Request $request, schedules $schedule)
+    public function update(Request $request, Schedules $schedule)
     {
         // --- VERIFIKASI KEPEMILIKAN JADWAL ---
         if ($schedule->lab->prodi_id !== auth()->user()->prodi_id) {
@@ -142,7 +142,7 @@ class schedulesController extends Controller
     /**
      * Menghapus Jadwal Lab.
      */
-    public function destroy(schedules $schedule)
+    public function destroy(Schedules $schedule)
     {
         // --- VERIFIKASI KEPEMILIKAN JADWAL ---
         if ($schedule->lab->prodi_id !== auth()->user()->prodi_id) {
@@ -160,7 +160,7 @@ class schedulesController extends Controller
      */
     protected function checkTimeConflict(int $labId, string $date, string $startTime, string $endTime, int $exceptId = null): bool
     {
-        $query = schedules::where('lab_id', $labId)
+        $query = Schedules::where('lab_id', $labId)
                          ->where('date', $date)
                          ->where(function ($query) use ($startTime, $endTime) {
                             // Cek apakah waktu baru dimulai saat jadwal lama masih berlangsung

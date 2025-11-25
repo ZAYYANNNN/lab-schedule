@@ -12,16 +12,19 @@ return new class extends Migration
     public function up(): void
     {
         
-    Schema::create('labs', function (Blueprint $table) {
-
-            $table->id();
-            $table->foreignId('prodi_id')->constrained('prodis')->cascadeOnDelete();
+       Schema::create('labs', function (Blueprint $table) {
+            $table->uuid('id')->primary();  
             $table->string('name');
-            $table->string('location')->nullable();
-            $table->text('description')->nullable();
+            $table->string('kode_lab');
+            $table->string('lokasi');
+            $table->string('prodi')->nullable();
+            $table->integer('kapasitas')->default(0);
+            $table->string('pj')->nullable();
+            $table->enum('status', ['Tersedia', 'Terpakai', 'Maintenance'])->default('Tersedia');
+            $table->string('foto')->nullable();
+
             $table->timestamps();
         });
-
     }
 
     /**
