@@ -7,7 +7,7 @@ use App\Http\Controllers\LabAssetController;
 use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ProfileController;
-
+use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     if (auth()->check()) {
@@ -18,34 +18,9 @@ Route::get('/', function () {
 
 // Dashboard untuk user yang SUDAH login
 Route::get('/dashboard', function () {
-    return view('superadmin.dashboard'); 
-})->middleware(['auth'])->name('dashboard');
+    return view('dashboard');
+})->middleware(['auth', 'verified'])->name('dashboard');
 
-require __DIR__.'/auth.php';
-
-
-Route::get('/check', function () {
-    return auth()->check() ? 'LOGGED IN' : 'NOT LOGGED IN';
-});
-
-
-
-// ==============================
-// AUTH AREA
-// ==============================
-Route::middleware('guest')->group(function () {
-    Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
-    Route::post('/login', [LoginController::class, 'login'])->name('login.post');
-});
-
-Route::post('/logout', [LoginController::class, 'logout'])
-    ->middleware('auth')
-    ->name('logout');
-
-
-// ==============================
-// PROFILE (AUTH ONLY)
-// ==============================
 Route::middleware('auth')->group(function () {
     Route::get('/profile', function () {
         return 'halaman profile';

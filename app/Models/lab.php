@@ -28,11 +28,11 @@ class Lab extends Model
 
     public function assets()
     {
-        return $this->hasMany(LabAsset::class);
+        return $this->hasMany(Assetlab::class);
     }
 
     public function schedules()
     {
-        return $this->hasMany(Schedule::class);
+        return $this->hasMany(Schedules::class);
     }
 }
