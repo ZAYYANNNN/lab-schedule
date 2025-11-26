@@ -64,6 +64,15 @@
             <span>Daftar Aset Lab</span>
         </a>
 
+        <a href="{{ route('superadmin.users.index') }}"
+            class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-100 
+                {{ request()->routeIs('superadmin.users.*') ? 'bg-blue-50 text-blue-600' : 'text-gray-700' }}">
+            <span class="material-symbols-outlined">
+                groups
+            </span>
+            <span>Kelola User</span>
+        </a>
+
     </nav>
 
 

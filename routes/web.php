@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\LabController;
 use App\Http\Controllers\LabAssetController;
 use App\Http\Controllers\ScheduleController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\ProfileController;
 
 
@@ -52,7 +53,7 @@ Route::middleware('auth')->group(function () {
 });
 
 
-// ==============================
+/// ==============================
 // SUPERADMIN AREA
 // ==============================
 Route::middleware(['auth', 'role:superadmin'])
@@ -63,21 +64,37 @@ Route::middleware(['auth', 'role:superadmin'])
         Route::get('/dashboard', fn() => view('superadmin.dashboard'))
             ->name('dashboard');
 
-        // LABS (superadmin version - prefix berbeda)
+        // LABS
         Route::resource('labs', LabController::class);
 
-        // ASSETS (global - tidak nested)
-        Route::get('/assets', [LabAssetController::class, 'index'])->name('assets.index');
-        Route::post('/assets', [LabAssetController::class, 'store'])->name('assets.store');
-        Route::put('/assets/{asset}', [LabAssetController::class, 'update'])->name('assets.update');
-        Route::delete('/assets/{asset}', [LabAssetController::class, 'destroy'])->name('assets.destroy');
+        // 🔥 1. Semua aset (TANPA labId)
+        Route::get('/assets', [LabAssetController::class, 'allAssets'])
+            ->name('assets.index');
 
-        // JADWAL (global - tidak nested)
+        // 🔥 2. Aset per LAB (DENGAN labId)
+        Route::get('/labs/{labId}/assets', [LabAssetController::class, 'index'])
+            ->name('labs.assets.index');
+
+        Route::post('/labs/{labId}/assets', [LabAssetController::class, 'store'])
+            ->name('labs.assets.store');
+
+        Route::put('/labs/{labId}/assets/{assetId}', [LabAssetController::class, 'update'])
+            ->name('labs.assets.update');
+
+        Route::delete('/labs/{labId}/assets/{assetId}', [LabAssetController::class, 'destroy'])
+            ->name('labs.assets.destroy');
+
+        // Jadwal
         Route::get('/jadwal', [ScheduleController::class, 'index'])->name('jadwal.index');
         Route::post('/jadwal', [ScheduleController::class, 'store'])->name('jadwal.store');
         Route::put('/jadwal/{schedule}', [ScheduleController::class, 'update'])->name('jadwal.update');
         Route::delete('/jadwal/{schedule}', [ScheduleController::class, 'destroy'])->name('jadwal.destroy');
+
+        // User
+        Route::get('/users', [UserController::class, 'index'])->name('users.index');
+        Route::post('/users', [UserController::class, 'store'])->name('users.store');
     });
+
 
 
 
