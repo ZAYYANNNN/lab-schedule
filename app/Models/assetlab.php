@@ -23,11 +23,16 @@ class AssetLab extends Model
     /**
      * Scope untuk filter Aset Lab berdasarkan prodi user yang login
      */
-    public function scopeByProdi(Builder $query, $prodiId = null)
+    public function scopeByProdi(Builder $query, $prodi = null)
     {
-        $prodiId = $prodiId ?? auth()->user()->prodi_id;
-        return $query->whereHas('lab', function (Builder $q) use ($prodiId) {
-            $q->where('prodi_id', $prodiId);
+        $prodi = $prodiId ?? auth()->user()->prodi;
+        return $query->whereHas('lab', function (Builder $q) use ($prodi) {
+            $q->where('prodi', $prodi);
         });
+    }
+
+    public function borrowings()
+    {
+        return $this->hasMany(Borrowing::class, 'asset_id');
     }
 }

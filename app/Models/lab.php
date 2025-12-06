@@ -14,8 +14,14 @@ class Lab extends Model
     protected $keyType = 'string';
 
     protected $fillable = [
-        'name', 'kode_lab', 'lokasi', 'prodi', 'kapasitas',
-        'pj', 'status', 'foto'
+        'name',
+        'kode_lab',
+        'lokasi',
+        'prodi',
+        'kapasitas',
+        'pj',
+        'status',
+        'foto'
     ];
 
     protected static function boot()
@@ -34,5 +40,10 @@ class Lab extends Model
     public function schedules()
     {
         return $this->hasMany(Schedules::class);
+    }
+
+    public function borrowings()
+    {
+        return $this->hasMany(Borrowing::class);
     }
 }

@@ -10,7 +10,7 @@ return new class extends Migration
      * Run the migrations.
      */
     public function up()
-    {
+    {   
         Schema::create('schedules', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('lab_id');
