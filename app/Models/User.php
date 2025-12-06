@@ -10,4 +10,23 @@ class User extends Authenticatable
         'name', 'email', 'password', 'role', 'prodi', 'prodi_id'
     ];
 
+    public function borrowings()
+    {
+        return $this->hasMany(Borrowing::class);
+    }
+
+    public function schedules()
+    {
+        return $this->hasMany(Schedules::class, 'created_by');
+    }
+
+    public function isAdmin()
+    {
+        return $this->role === 'admin';
+    }
+
+    public function isSuperAdmin()
+    {
+        return $this->role === 'superadmin';
+    }
 }

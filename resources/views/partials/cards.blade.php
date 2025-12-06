@@ -66,7 +66,7 @@
                     <span>Edit</span>
                 </button>
 
-                <form action="{{ route('superadmin.labs.destroy', $lab->id) }}" method="POST">
+                <form action="{{ route('labs.destroy', $lab->id) }}" method="POST">
                     @csrf @method('DELETE')
 
                     <button class="flex items-center gap-1 text-red-600 hover:text-red-800 

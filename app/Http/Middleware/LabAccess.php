@@ -22,9 +22,12 @@ class LabAccess
             return $next($request);
         }
 
-        // Selain admin -> tolak
-        if ($user->role !== 'admin') {
-            abort(403);
+        if ($user->role !== 'admin') abort(403, 'Forbidden');
+
+        $lab = $request->route('lab');
+
+        if (!$lab || $lab->prodi !== $user->prodi) {
+            abort(403, 'Unauthorized Lab Access');
         }
 
         // Ambil lab ID dari route mana pun
@@ -54,6 +57,6 @@ class LabAccess
         }
 
         return $next($request);
-    }
+        }
 
 }

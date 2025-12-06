@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('prodi')->nullable();
             $table->integer('kapasitas')->default(0);
             $table->string('pj')->nullable();
-            $table->enum('status', ['Tersedia', 'Terpakai', 'Maintenance'])->default('Tersedia');
+            $table->enum('status', ['Tersedia', 'Digunakan', 'Maintenance'])->default('Tersedia');
             $table->string('foto')->nullable();
 
             $table->timestamps();
