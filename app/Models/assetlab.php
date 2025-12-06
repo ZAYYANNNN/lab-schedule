@@ -25,9 +25,9 @@ class AssetLab extends Model
      */
     public function scopeByProdi(Builder $query, $prodiId = null)
     {
-        $prodiId = $prodiId ?? auth()->user()->prodi_id;
-        return $query->whereHas('lab', function (Builder $q) use ($prodiId) {
-            $q->where('prodi_id', $prodiId);
+        $prodi = $prodi ?? auth()->user()->prodi;
+        return $query->whereHas('lab', function (Builder $q) use ($prodi) {
+            $q->where('prodi', $prodi);
         });
     }
 }

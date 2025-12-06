@@ -13,11 +13,12 @@ class labController extends Controller
      */
     public function index()
     {
-        // Filter Lab berdasarkan prodi_id Admin yang login
+        // Filter Lab berdasarkan prodi Admin yang login
         // Ini memastikan Admin hanya melihat Lab di bawah tanggung jawabnya
         $labs = Lab::where('prodi_id', auth()->user()->prodi_id)
-                     ->orderBy('name')
-                     ->get();
+            ->orderBy('name')
+            ->get();
+
 
         return view('admin.daftarlab', compact('labs'));
     }
@@ -44,7 +45,7 @@ class labController extends Controller
             'name' => 'required|string|max:255',
             'location' => 'nullable|string|max:255',
             'capacity' => 'nullable|integer|min:1',
-            // prodi_id tidak diizinkan diubah oleh Admin Prodi
+            // prodi tidak diizinkan diubah oleh Admin Prodi
         ]);
         
         $lab->update($validated);

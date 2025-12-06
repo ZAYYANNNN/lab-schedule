@@ -9,16 +9,17 @@ class ProdiSeeder extends Seeder
 {
     public function run(): void
     {
-        // Masukkan data Prodi yang diperlukan
-        Prodi::updateOrCreate(
-            ['nama_prodi' => 'Teknik Informatika'],
-            ['kode' => 'TI']
-        );
+        $prodis = [
+            'Teknik Informatika',
+            'Teknik Elektro',
+            'Teknik Mesin',
+            'Teknik Sipil',
+            'Arsitektur',
+        ];
 
-        Prodi::updateOrCreate(
-            ['nama_prodi' => 'Teknik Sipil'],
-            ['kode' => 'TS']
-        );
+        foreach ($prodis as $name) {
+            Prodi::firstOrCreate(['name' => $name]);
+        }
         
         $this->command->info('Data Prodi berhasil dimasukkan.');
     }

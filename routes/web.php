@@ -7,7 +7,7 @@ use App\Http\Controllers\LabAssetController;
 use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ProfileController;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\DashboardController;
 
 Route::get('/', function () {
     if (auth()->check()) {
@@ -16,9 +16,18 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
+    Route::post('/login', [LoginController::class, 'login'])->name('login.post');
+});
+
+Route::post('/logout', [LoginController::class, 'logout'])
+    ->middleware('auth')
+    ->name('logout');
+
 // Dashboard untuk user yang SUDAH login
 Route::get('/dashboard', function () {
-    return view('dashboard');
+    return view('superadmin.dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
@@ -76,13 +85,20 @@ Route::middleware(['auth', 'role:superadmin'])
 // ==============================
 // ADMIN AREA
 // ==============================
+// Routes yang TIDAK memerlukan lab context (tidak butuh middleware labaccess)
+Route::middleware(['auth', 'role:admin'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+        Route::get('/dashboard', fn() => view('admin.dashboard'))
+            ->name('dashboard');
+    });
+
+// Routes yang MEMERLUKAN lab context (dengan middleware labaccess)
 Route::middleware(['auth', 'role:admin', 'labaccess'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
-
-        Route::get('/dashboard', fn() => view('admin.dashboard'))
-            ->name('dashboard');
 
         // DAFTAR LAB ADMIN
         Route::resource('labs', LabController::class);

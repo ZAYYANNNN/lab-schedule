@@ -12,10 +12,8 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $userProdiId = auth()->user()->prodi_id;
-        
-        // Ambil ID semua lab milik prodi ini
-        $labIds = Lab::where('prodi_id', $userProdiId)->pluck('id');
+        $userProdi = auth()->user()->prodi;
+        $labIds = Lab::where('prodi', $userProdi)->pluck('id');
 
         // 1. Total Laboratorium
         $totalLab = $labIds->count();
@@ -26,8 +24,8 @@ class DashboardController extends Controller
         // 3. Peminjaman Aktif (Status 'Dipinjam')
         // Cari aset yang lab-nya milik prodi ini, lalu hitung peminjaman aktif
         $peminjamanAktif = Peminjaman::where('status', 'Dipinjam')
-            ->whereHas('asetLab.lab', function ($query) use ($userProdiId) {
-                $query->where('prodi_id', $userProdiId);
+            ->whereHas('asetLab.lab', function ($query) use ($userProdi) {
+                $query->where('prodi', $userProdi);
             })->count();
 
         // 4. Laporan Pending (Asumsi Report memiliki relasi ke Lab atau Prodi)

@@ -16,7 +16,7 @@ class AdminTISeeder extends Seeder
     {
         // 1. Cari ID Prodi untuk "Teknik Informatika"
         // Sesuaikan query ini berdasarkan kolom nama prodi Anda
-        $prodiTI = Prodi::where('nama_prodi', 'Teknik Informatika')->first();
+        $prodiTI = Prodi::where('name', 'Teknik Informatika')->first();
 
         // Pastikan prodi ditemukan sebelum membuat admin
         if ($prodiTI) {

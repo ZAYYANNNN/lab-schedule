@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Prodi;
 use Illuminate\Http\Request;
 
 class UserController extends Controller
@@ -10,8 +11,9 @@ class UserController extends Controller
     public function index()
     {
         $admins = User::where('role', 'admin')->get();
+        $prodis = Prodi::all();
 
-        return view('superadmin.users.index', compact('admins'));
+        return view('superadmin.users.index', compact('admins', 'prodis'));
     }
 
     public function store(Request $r)
@@ -19,14 +21,14 @@ class UserController extends Controller
         $r->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users',
-            'prodi' => 'required|string',
+            'prodi_id' => 'required|exists:prodis,id', // foreign key
             'password' => 'required|min:5',
         ]);
 
         User::create([
             'name' => $r->name,
             'email' => $r->email,
-            'prodi' => $r->prodi,
+            'prodi_id' => $r->prodi_id, // foreign key
             'role' => 'admin',
             'password' => bcrypt($r->password),
         ]);

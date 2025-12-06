@@ -25,7 +25,12 @@
 
                     <div>
                         <label>Prodi</label>
-                        <input name="prodi" class="w-full border p-2 rounded">
+                        <select name="prodi_id" class="w-full border p-2 rounded" required>
+                            <option value="">-- Pilih Prodi --</option>
+                            @foreach($prodis as $p)
+                                <option value="{{ $p->id }}">{{ $p->name }}</option>
+                            @endforeach
+                        </select>
                     </div>
 
                     <div>
@@ -48,7 +53,7 @@
 
             @forelse($admins as $admin)
                 <div class="border-b py-2">
-                    {{ $admin->name }} — {{ $admin->email }} ({{ $admin->prodi }})
+                    {{ $admin->name }} — {{ $admin->email }} ({{ $admin->prodi->name ?? '-' }})
                 </div>
             @empty
                 <p class="text-gray-500">Belum ada admin.</p>

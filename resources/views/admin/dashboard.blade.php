@@ -1,66 +1,48 @@
-@extends('layouts.admin')
+@extends('admin.layouts.admin')
 
 @section('title', 'Dashboard - Admin Prodi')
 
 @section('content')
-    <div class="container-fluid">
-        <h2 class="page-title">Dashboard</h2>
-        <p class="page-subtitle">Overview Prodi Teknologi Informasi</p>
-        
-        {{-- Area Cards Overview --}}
-        <div class="row mb-4">
-            {{-- Card Total Laboratorium --}}
-            <div class="col-md-3">
-                <div class="card">
-                    <div class="card-body">
-                        {{-- Isi Card Total Laboratorium --}}
-                    </div>
-                </div>
-            </div>
-            {{-- Card Total Aset --}}
-            <div class="col-md-3">
-                <div class="card">
-                    <div class="card-body">
-                        {{-- Isi Card Total Aset --}}
-                    </div>
-                </div>
-            </div>
-            {{-- Card Peminjaman Aktif --}}
-            <div class="col-md-3">
-                <div class="card">
-                    <div class="card-body">
-                        {{-- Isi Card Peminjaman Aktif --}}
-                    </div>
-                </div>
-            </div>
-            {{-- Card Laporan Pending --}}
-            <div class="col-md-3">
-                <div class="card">
-                    <div class="card-body">
-                        {{-- Isi Card Laporan Pending --}}
-                    </div>
-                </div>
-            </div>
+    <h2 class="text-3xl font-bold mb-2">Dashboard</h2>
+    <p class="text-gray-600 mb-6">Overview Prodi {{ auth()->user()->prodi->nama_prodi ?? 'N/A' }}</p>
+    
+    {{-- Area Cards Overview --}}
+    <div class="grid grid-cols-4 gap-4 mb-6">
+        {{-- Card Total Laboratorium --}}
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-gray-600 text-sm font-medium">Total Laboratorium</h3>
+            <p class="text-4xl font-bold text-blue-600 mt-2">{{ $totalLab ?? 0 }}</p>
         </div>
 
-        {{-- Area Aktivitas dan Utilisasi --}}
-        <div class="row">
-            <div class="col-md-8">
-                <div class="card">
-                    <div class="card-header">Aktivitas Terbaru</div>
-                    <div class="card-body">
-                        {{-- List Aktivitas --}}
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card">
-                    <div class="card-header">Utilisasi Lab</div>
-                    <div class="card-body">
-                        {{-- Grafik Utilisasi --}}
-                    </div>
-                </div>
-            </div>
+        {{-- Card Total Aset --}}
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-gray-600 text-sm font-medium">Total Aset</h3>
+            <p class="text-4xl font-bold text-green-600 mt-2">{{ $totalAset ?? 0 }}</p>
+        </div>
+
+        {{-- Card Peminjaman Aktif --}}
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-gray-600 text-sm font-medium">Peminjaman Aktif</h3>
+            <p class="text-4xl font-bold text-yellow-600 mt-2">{{ $peminjamanAktif ?? 0 }}</p>
+        </div>
+
+        {{-- Card Laporan Pending --}}
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-gray-600 text-sm font-medium">Laporan Pending</h3>
+            <p class="text-4xl font-bold text-red-600 mt-2">{{ $laporanPending ?? 0 }}</p>
+        </div>
+    </div>
+
+    {{-- Area Aktivitas dan Utilisasi --}}
+    <div class="grid grid-cols-3 gap-4">
+        <div class="col-span-2 bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold mb-4">Aktivitas Terbaru</h3>
+            <p class="text-gray-500">Fitur aktivitas terbaru akan ditampilkan di sini.</p>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold mb-4">Utilisasi Lab</h3>
+            <p class="text-gray-500">Grafik utilisasi akan ditampilkan di sini.</p>
         </div>
     </div>
 @endsection
