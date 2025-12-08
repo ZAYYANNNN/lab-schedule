@@ -10,13 +10,13 @@ class ScheduleController extends Controller
     {
         $user = auth()->user();
 
-        $query = \App\Models\Schedules::with('lab')
+        $query = \App\Models\Schedules::with('lab.prodi')
             ->orderBy('date')
             ->orderBy('start_time');
 
         if ($user->role !== 'superadmin') {
             $query->whereHas('lab', function ($q) use ($user) {
-                $q->where('prodi', $user->prodi);
+                $q->where('prodi_id', $user->prodi_id);
             });
         }
 
@@ -30,7 +30,7 @@ class ScheduleController extends Controller
         if (auth()->user()->role === 'superadmin') {
             $labs = \App\Models\Lab::all();
         } else {
-            $labs = \App\Models\Lab::where('prodi', auth()->user()->prodi)->get();
+            $labs = \App\Models\Lab::where('prodi_id', auth()->user()->prodi_id)->get();
         }
 
         return view('schedules.create', compact('labs'));
@@ -54,14 +54,14 @@ class ScheduleController extends Controller
 
     public function edit(\App\Models\Schedules $schedule)
     {
-        if (auth()->user()->role !== 'superadmin' && auth()->user()->prodi !== $schedule->lab->prodi) {
+        if (auth()->user()->role !== 'superadmin' && auth()->user()->prodi_id !== $schedule->lab->prodi_id) {
             abort(403, 'Unauthorized action.');
         }
 
         if (auth()->user()->role === 'superadmin') {
             $labs = \App\Models\Lab::all();
         } else {
-            $labs = \App\Models\Lab::where('prodi', auth()->user()->prodi)->get();
+            $labs = \App\Models\Lab::where('prodi_id', auth()->user()->prodi_id)->get();
         }
 
         return view('schedules.edit', compact('schedule', 'labs'));
@@ -69,7 +69,7 @@ class ScheduleController extends Controller
 
     public function update(Request $request, \App\Models\Schedules $schedule)
     {
-        if (auth()->user()->role !== 'superadmin' && auth()->user()->prodi !== $schedule->lab->prodi) {
+        if (auth()->user()->role !== 'superadmin' && auth()->user()->prodi_id !== $schedule->lab->prodi_id) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -88,7 +88,7 @@ class ScheduleController extends Controller
 
     public function destroy(\App\Models\Schedules $schedule)
     {
-        if (auth()->user()->role !== 'superadmin' && auth()->user()->prodi !== $schedule->lab->prodi) {
+        if (auth()->user()->role !== 'superadmin' && auth()->user()->prodi_id !== $schedule->lab->prodi_id) {
             abort(403, 'Unauthorized action.');
         }
 

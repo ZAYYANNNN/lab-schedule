@@ -4,11 +4,29 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Support\Str;
 
 class AssetLab extends Model
 {
+    use HasUuids;
+
     protected $table = 'aset_labs';
-    protected $fillable = ['lab_id', 'name', 'quantity', 'condition', 'description'];
+    public $incrementing = false;
+    protected $keyType = 'string';
+
+    // Sesuaikan dengan kolom di migration: nama, kode_aset, jumlah
+    protected $fillable = ['id', 'lab_id', 'nama', 'kode_aset', 'jumlah'];
+
+    protected static function boot()
+    {
+        parent::boot();
+        static::creating(function ($model) {
+            if (empty($model->id)) {
+                $model->id = Str::uuid()->toString();
+            }
+        });
+    }
 
     public function lab()
     {
@@ -23,11 +41,11 @@ class AssetLab extends Model
     /**
      * Scope untuk filter Aset Lab berdasarkan prodi user yang login
      */
-    public function scopeByProdi(Builder $query, $prodi = null)
+    public function scopeByProdi(Builder $query, $prodiId = null)
     {
-        $prodi = $prodi ?? auth()->user()->prodi;
-        return $query->whereHas('lab', function (Builder $q) use ($prodi) {
-            $q->where('prodi', $prodi);
+        $prodiId = $prodiId ?? auth()->user()->prodi_id;
+        return $query->whereHas('lab', function (Builder $q) use ($prodiId) {
+            $q->where('prodi_id', $prodiId);
         });
     }
 

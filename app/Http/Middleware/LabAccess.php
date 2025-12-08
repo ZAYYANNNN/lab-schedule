@@ -17,46 +17,51 @@ class LabAccess
     {
         $user = $request->user();
 
-        // Superadmin -> bebas
+        // Superadmin -> bebas akses semua
         if ($user->role === 'superadmin') {
             return $next($request);
         }
 
-        if ($user->role !== 'admin') abort(403, 'Forbidden');
-
+        // Ambil lab dari route parameter
         $lab = $request->route('lab');
+        $schedule = $request->route('schedule');
+        $asset = $request->route('asset');
+        $borrowing = $request->route('borrowing');
 
-        if (!$lab || $lab->prodi !== $user->prodi) {
-            abort(403, 'Unauthorized Lab Access');
+        // Jika tidak ada parameter spesifik (berarti ini route index/create)
+        // Biarkan lewat, Controller akan handle filtering
+        if (!$lab && !$schedule && !$asset && !$borrowing) {
+            return $next($request);
         }
 
-        // Ambil lab ID dari route mana pun
-        $labId = $request->route('lab') 
-                ?? $request->route('asset')?->lab_id
-                ?? $request->route('schedule')?->lab_id;
-
-        // Jika route param 'lab' adalah object Model (Route Binding), ambil ID-nya
-        if ($labId instanceof \App\Models\Lab) {
-            $labId = $labId->id;
+        // Cek akses untuk Lab
+        if ($lab) {
+            if ($user->prodi_id !== $lab->prodi_id) {
+                abort(403, 'Unauthorized: Anda tidak memiliki akses ke lab prodi lain.');
+            }
         }
 
-        if (!$labId) {
-            abort(403, 'No lab context.');
+        // Cek akses untuk Schedule (via lab relationship)
+        if ($schedule) {
+            if ($schedule->lab && $user->prodi_id !== $schedule->lab->prodi_id) {
+                abort(403, 'Unauthorized: Anda tidak memiliki akses ke jadwal prodi lain.');
+            }
         }
 
-        // Cek kepemilikan Prodi
-        $lab = \App\Models\Lab::find($labId);
-        
-        if (!$lab) {
-            abort(404, 'Lab not found.');
+        // Cek akses untuk Asset (via lab relationship)
+        if ($asset) {
+            if ($asset->lab && $user->prodi_id !== $asset->lab->prodi_id) {
+                abort(403, 'Unauthorized: Anda tidak memiliki akses ke aset prodi lain.');
+            }
         }
 
-        // Admin hanya boleh akses lab yang prodi_id nya SAMA dengan prodi_id admin
-        if ($user->prodi_id !== $lab->prodi_id) {
-            abort(403, 'Unauthorized: Different Prodi.');
+        // Cek akses untuk Borrowing (via asset->lab relationship)
+        if ($borrowing) {
+            if ($borrowing->asset && $borrowing->asset->lab && $user->prodi_id !== $borrowing->asset->lab->prodi_id) {
+                abort(403, 'Unauthorized: Anda tidak memiliki akses ke peminjaman prodi lain.');
+            }
         }
 
         return $next($request);
-        }
-
+    }
 }

@@ -21,6 +21,9 @@
                         <th class="py-3 px-6 text-left">Nama Aset</th>
                         <th class="py-3 px-6 text-left">Kode Aset</th>
                         <th class="py-3 px-6 text-left">Lab</th>
+                        @if(auth()->user()->role === 'superadmin')
+                            <th class="py-3 px-6 text-left">Prodi</th>
+                        @endif
                         <th class="py-3 px-6 text-center">Jumlah</th>
                         @if(auth()->user()->role === 'admin')
                             <th class="py-3 px-6 text-center">Actions</th>
@@ -33,6 +36,11 @@
                             <td class="py-3 px-6 text-left whitespace-nowrap">{{ $asset->nama }}</td>
                             <td class="py-3 px-6 text-left">{{ $asset->kode_aset ?? '-' }}</td>
                             <td class="py-3 px-6 text-left">{{ $asset->lab->name }}</td>
+                            @if(auth()->user()->role === 'superadmin')
+                                <td class="py-3 px-6 text-left">
+                                    <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">{{ $asset->lab->prodi->name ?? $asset->lab->prodi ?? '-' }}</span>
+                                </td>
+                            @endif
                             <td class="py-3 px-6 text-center">{{ $asset->jumlah }}</td>
                             @if(auth()->user()->role === 'admin')
                                 <td class="py-3 px-6 text-center">

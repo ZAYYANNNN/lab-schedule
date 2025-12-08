@@ -29,4 +29,9 @@ class User extends Authenticatable
     {
         return $this->role === 'superadmin';
     }
+
+    public function prodi()
+    {
+        return $this->belongsTo(Prodi::class, 'prodi_id');
+    }
 }

@@ -15,8 +15,8 @@ class LabController extends Controller
         $q = $r->search;
 
         $query = Lab::query()
-            ->select(['id', 'name', 'kode_lab', 'lokasi', 'prodi', 'kapasitas', 'pj', 'status', 'foto'])
-            ->when($user->role === 'admin', fn($q2) => $q2->where('prodi', $user->prodi))
+            ->select(['id', 'name', 'kode_lab', 'lokasi', 'prodi', 'prodi_id', 'kapasitas', 'pj', 'status', 'foto'])
+            ->when($user->role === 'admin', fn($q2) => $q2->where('prodi_id', $user->prodi_id))
             ->when(
                 $q,
                 fn($q2) => $q2
@@ -63,9 +63,9 @@ class LabController extends Controller
             'status'
         ]);
 
-        // Enforce prodi for admin
+        // Enforce prodi_id for admin
         if (auth()->user()->role === 'admin') {
-            $data['prodi'] = auth()->user()->prodi;
+            $data['prodi_id'] = auth()->user()->prodi_id;
         }
 
         // UUID WAJIB DISET
@@ -87,7 +87,7 @@ class LabController extends Controller
     public function update(Request $r, Lab $lab)
     {
         // Check permission for admin
-        if (auth()->user()->role === 'admin' && $lab->prodi !== auth()->user()->prodi) {
+        if (auth()->user()->role === 'admin' && $lab->prodi_id !== auth()->user()->prodi_id) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -115,6 +115,7 @@ class LabController extends Controller
         // Enforce prodi for admin (cannot change prodi)
         if (auth()->user()->role === 'admin') {
             unset($data['prodi']); // Do not allow admin to update prodi
+            unset($data['prodi_id']);
         }
 
         // UPDATE FOTO (hapus lama dulu)
@@ -139,7 +140,7 @@ class LabController extends Controller
     public function destroy(Lab $lab)
     {
         // Check permission for admin
-        if (auth()->user()->role === 'admin' && $lab->prodi !== auth()->user()->prodi) {
+        if (auth()->user()->role === 'admin' && $lab->prodi_id !== auth()->user()->prodi_id) {
             abort(403, 'Unauthorized action.');
         }
 

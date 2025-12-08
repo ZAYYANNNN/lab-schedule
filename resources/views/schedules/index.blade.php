@@ -19,6 +19,9 @@
                         <div>
                             <h2 class="text-xl font-semibold text-gray-800">{{ $schedule->activity }}</h2>
                             <p class="text-gray-600 text-sm mt-1">{{ $schedule->lab->name }}</p>
+                            @if(auth()->user()->role === 'superadmin' && $schedule->lab->prodi)
+                                <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">{{ $schedule->lab->prodi->name ?? $schedule->lab->prodi }}</span>
+                            @endif
                         </div>
                         <div class="text-right">
                             <p class="text-sm font-bold text-blue-600">

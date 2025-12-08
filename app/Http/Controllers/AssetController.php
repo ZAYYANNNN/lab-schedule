@@ -3,33 +3,48 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\AssetLab;
+use App\Models\Lab;
 
 class AssetController extends Controller
 {
+    /**
+     * INDEX: Superadmin lihat semua, Admin hanya lihat prodi-nya
+     */
     public function index()
     {
         $user = auth()->user();
-        $assets = \App\Models\AssetLab::with('lab');
+        $query = AssetLab::with('lab.prodi');
 
+        // Admin hanya lihat aset dari lab prodi-nya
         if ($user->role === 'admin') {
-            $assets->whereHas('lab', function ($q) use ($user) {
-                $q->where('prodi', $user->prodi);
+            $query->whereHas('lab', function ($q) use ($user) {
+                $q->where('prodi_id', $user->prodi_id);
             });
         }
+        // Superadmin lihat semua (tidak difilter)
 
-        return view('assets.index', ['assets' => $assets->get()]);
+        return view('assets.index', ['assets' => $query->get()]);
     }
 
+    /**
+     * CREATE: Hanya Admin (Superadmin tidak boleh)
+     */
     public function create()
     {
-        $this->authorizeAdmin();
-        $labs = \App\Models\Lab::where('prodi', auth()->user()->prodi)->get();
+        $this->authorizeAdminOnly();
+        
+        $labs = Lab::where('prodi_id', auth()->user()->prodi_id)->get();
         return view('assets.create', compact('labs'));
     }
 
+    /**
+     * STORE: Hanya Admin (Superadmin tidak boleh)
+     */
     public function store(Request $request)
     {
-        $this->authorizeAdmin();
+        $this->authorizeAdminOnly();
+        
         $validated = $request->validate([
             'lab_id' => 'required|exists:labs,id',
             'nama' => 'required|string|max:255',
@@ -37,27 +52,37 @@ class AssetController extends Controller
             'jumlah' => 'required|integer|min:1',
         ]);
 
-        \App\Models\AssetLab::create($validated);
+        // Pastikan lab yang dipilih milik prodi admin
+        $lab = Lab::findOrFail($validated['lab_id']);
+        if ($lab->prodi_id !== auth()->user()->prodi_id) {
+            abort(403, 'Anda tidak bisa menambah aset ke lab prodi lain.');
+        }
 
-        return redirect()->route('assets.index')->with('success', 'Asset created successfully.');
+        AssetLab::create($validated);
+
+        return redirect()->route('assets.index')->with('success', 'Asset berhasil ditambahkan.');
     }
 
-    public function edit(\App\Models\AssetLab $asset)
+    /**
+     * EDIT: Hanya Admin & aset harus milik prodi-nya
+     */
+    public function edit(AssetLab $asset)
     {
-        $this->authorizeAdmin();
-        if (auth()->user()->prodi !== $asset->lab->prodi) {
-            abort(403, 'Unauthorized action.');
-        }
-        $labs = \App\Models\Lab::where('prodi', auth()->user()->prodi)->get();
+        $this->authorizeAdminOnly();
+        $this->authorizeAssetOwnership($asset);
+
+        $labs = Lab::where('prodi_id', auth()->user()->prodi_id)->get();
         return view('assets.edit', compact('asset', 'labs'));
     }
 
-    public function update(Request $request, \App\Models\AssetLab $asset)
+    /**
+     * UPDATE: Hanya Admin & aset harus milik prodi-nya
+     */
+    public function update(Request $request, AssetLab $asset)
     {
-        $this->authorizeAdmin();
-        if (auth()->user()->prodi !== $asset->lab->prodi) {
-            abort(403, 'Unauthorized action.');
-        }
+        $this->authorizeAdminOnly();
+        $this->authorizeAssetOwnership($asset);
+
         $validated = $request->validate([
             'lab_id' => 'required|exists:labs,id',
             'nama' => 'required|string|max:255',
@@ -65,25 +90,46 @@ class AssetController extends Controller
             'jumlah' => 'required|integer|min:1',
         ]);
 
+        // Pastikan lab tujuan juga milik prodi admin
+        $lab = Lab::findOrFail($validated['lab_id']);
+        if ($lab->prodi_id !== auth()->user()->prodi_id) {
+            abort(403, 'Anda tidak bisa memindah aset ke lab prodi lain.');
+        }
+
         $asset->update($validated);
 
-        return redirect()->route('assets.index')->with('success', 'Asset updated successfully.');
+        return redirect()->route('assets.index')->with('success', 'Asset berhasil diupdate.');
     }
 
-    public function destroy(\App\Models\AssetLab $asset)
+    /**
+     * DESTROY: Hanya Admin & aset harus milik prodi-nya
+     */
+    public function destroy(AssetLab $asset)
     {
-        $this->authorizeAdmin();
-        if (auth()->user()->prodi !== $asset->lab->prodi) {
-            abort(403, 'Unauthorized action.');
-        }
+        $this->authorizeAdminOnly();
+        $this->authorizeAssetOwnership($asset);
+
         $asset->delete();
-        return redirect()->route('assets.index')->with('success', 'Asset deleted successfully.');
+        return redirect()->route('assets.index')->with('success', 'Asset berhasil dihapus.');
     }
 
-    private function authorizeAdmin()
+    /**
+     * Helper: Pastikan user adalah Admin (bukan Superadmin)
+     */
+    private function authorizeAdminOnly()
     {
         if (auth()->user()->role !== 'admin') {
-            abort(403, 'Unauthorized action.');
+            abort(403, 'Hanya Admin yang bisa melakukan aksi ini.');
+        }
+    }
+
+    /**
+     * Helper: Pastikan aset milik prodi Admin yang login
+     */
+    private function authorizeAssetOwnership(AssetLab $asset)
+    {
+        if ($asset->lab && $asset->lab->prodi_id !== auth()->user()->prodi_id) {
+            abort(403, 'Anda tidak memiliki akses ke aset prodi lain.');
         }
     }
 }

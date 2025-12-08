@@ -59,7 +59,10 @@
                         <span class="font-medium">{{ $admin->name }}</span>
                         <span class="text-gray-500 text-sm mx-2">—</span>
                         <span class="text-gray-600">{{ $admin->email }}</span>
-                        <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded ml-2">{{ $admin->prodi->name ?? '-' }}</span>
+                        @php
+                            $prodiName = \App\Models\Prodi::find($admin->prodi_id)?->name ?? '-';
+                        @endphp
+                        <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded ml-2">{{ $prodiName }}</span>
                     </div>
 
                     <div class="flex gap-2">

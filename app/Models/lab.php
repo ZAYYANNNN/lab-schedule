@@ -18,6 +18,7 @@ class Lab extends Model
         'kode_lab',
         'lokasi',
         'prodi',
+        'prodi_id',
         'kapasitas',
         'pj',
         'status',
@@ -30,6 +31,11 @@ class Lab extends Model
         static::creating(function ($model) {
             $model->id = Str::uuid()->toString();
         });
+    }
+
+    public function prodi()
+    {
+        return $this->belongsTo(Prodi::class);
     }
 
     public function assets()

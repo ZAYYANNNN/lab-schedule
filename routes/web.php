@@ -25,9 +25,16 @@ Route::post('/logout', [LoginController::class, 'logout'])
     ->middleware('auth')
     ->name('logout');
 
+// Routes untuk semua user yang login
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
+    // Users - Superadmin only (proteksi di controller)
+    Route::resource('users', UserController::class);
+});
+
+// Routes yang MEMERLUKAN pengecekan Prodi (Admin dibatasi per Prodi)
+Route::middleware(['auth', 'labaccess'])->group(function () {
     // Labs
     Route::resource('labs', LabController::class);
 
@@ -39,7 +46,4 @@ Route::middleware(['auth'])->group(function () {
 
     // Borrowings
     Route::resource('borrowings', BorrowingController::class);
-
-    // Users (Superadmin only, but handled by controller/middleware)
-    Route::resource('users', UserController::class);
 });
