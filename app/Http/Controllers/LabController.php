@@ -3,12 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\Lab;
+use App\Models\Prodi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 
 class LabController extends Controller
 {
+
     public function index(Request $r)
     {
         $user = auth()->user();
@@ -16,56 +18,76 @@ class LabController extends Controller
 
         $query = Lab::query()
             ->select(['id', 'name', 'kode_lab', 'lokasi', 'prodi', 'prodi_id', 'kapasitas', 'pj', 'status', 'foto'])
-            ->when($user->role === 'admin', fn($q2) => $q2->where('prodi_id', $user->prodi_id))
             ->when(
-                $q,
-                fn($q2) => $q2
-                    ->where(function ($wh) use ($q) {
-                        $wh->where('name', 'like', "%$q%")
-                            ->orWhere('kode_lab', 'like', "%$q%")
-                            ->orWhere('lokasi', 'like', "%$q%");
-                    })
+                $user->role === 'admin',
+                fn($q2) =>
+                $q2->where('prodi_id', $user->prodi_id)
             )
+            ->when($q, function ($q2) use ($q) {
+                $q2->where(function ($wh) use ($q) {
+                    $wh->where('name', 'like', "%$q%")
+                        ->orWhere('kode_lab', 'like', "%$q%")
+                        ->orWhere('lokasi', 'like', "%$q%");
+                });
+            })
             ->orderBy('name');
 
         $labs = $query->get();
+
+        // 🔹 AMBIL DATA PRODI DARI DATABASE
+        // 🔹 AMBIL DATA PRODI DARI DATABASE (ID & NAME)
+        $prodiList = Prodi::orderBy('name')
+            ->select('id', 'name')
+            ->get();
 
         if ($r->ajax() || $r->has('ajax')) {
             return response()->json($labs);
         }
 
-
-        return view('labs.index', compact('labs'));
+        return view('labs.index', compact('labs', 'prodiList'));
     }
+
 
 
 
     public function store(Request $r)
     {
-        $r->validate([
+        // Validasi dasar
+        $rules = [
             'name' => 'required|string|max:255',
             'kode_lab' => 'required|string|max:255',
             'lokasi' => 'required|string',
-            'prodi' => 'nullable|string',
             'kapasitas' => 'required|integer|min:1',
             'pj' => 'nullable|string',
             'status' => 'required|in:Tersedia,Digunakan,Maintenance',
             'foto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
-        ]);
+        ];
+
+        // Jika superadmin, validasi prodi_id
+        if (auth()->user()->role === 'superadmin') {
+            $rules['prodi_id'] = 'required|exists:prodis,id';
+        }
+
+        $r->validate($rules);
 
         $data = $r->only([
             'name',
             'kode_lab',
             'lokasi',
-            'prodi',
             'kapasitas',
             'pj',
             'status'
         ]);
 
-        // Enforce prodi_id for admin
+        // LOGIKA PRODI
         if (auth()->user()->role === 'admin') {
+            // Admin: Paksa ke prodi sendiri
             $data['prodi_id'] = auth()->user()->prodi_id;
+            $data['prodi'] = auth()->user()->prodi()->value('name'); // Ambil nama dari relasi jika ada
+        } else {
+            // Superadmin: Pakai inputan
+            $data['prodi_id'] = $r->prodi_id;
+            $data['prodi'] = Prodi::where('id', $r->prodi_id)->value('name');
         }
 
         // UUID WAJIB DISET
@@ -91,32 +113,39 @@ class LabController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
-        $r->validate([
+        $rules = [
             'name' => 'required|string|max:255',
             'kode_lab' => 'required|string|max:255',
             'lokasi' => 'required|string',
-            'prodi' => 'nullable|string',
             'kapasitas' => 'required|integer|min:1',
             'pj' => 'nullable|string',
             'status' => 'required|in:Tersedia,Digunakan,Maintenance',
             'foto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
-        ]);
+        ];
+
+        if (auth()->user()->role === 'superadmin') {
+            $rules['prodi_id'] = 'required|exists:prodis,id';
+        }
+
+        $r->validate($rules);
 
         $data = $r->only([
             'name',
             'kode_lab',
             'lokasi',
-            'prodi',
             'kapasitas',
             'pj',
             'status'
         ]);
 
-        // Enforce prodi for admin (cannot change prodi)
-        if (auth()->user()->role === 'admin') {
-            unset($data['prodi']); // Do not allow admin to update prodi
-            unset($data['prodi_id']);
+        if (auth()->user()->role === 'superadmin') {
+            // Jika superadmin mengubah prodi
+            if ($r->prodi_id !== $lab->prodi_id) {
+                $data['prodi_id'] = $r->prodi_id;
+                $data['prodi'] = Prodi::where('id', $r->prodi_id)->value('name');
+            }
         }
+        // Admin TIDAK BOLEH update prodi, jadi tidak ada logika else untuk set prodi_id
 
         // UPDATE FOTO (hapus lama dulu)
         if ($r->hasFile('foto')) {

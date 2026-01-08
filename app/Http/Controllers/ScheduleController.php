@@ -6,23 +6,63 @@ use Illuminate\Http\Request;
 
 class ScheduleController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
+        $selectedDate = $request->get('date', date('Y-m-d'));
 
-        $query = \App\Models\Schedules::with('lab.prodi')
-            ->orderBy('date')
+        // Security: Non-superadmins are locked to their own prodi
+        if ($user->role !== 'superadmin') {
+            $selectedProdi = $user->prodi_id;
+        } else {
+            $selectedProdi = $request->get('prodi_id');
+        }
+
+        // Query Labs
+        $labQuery = \App\Models\Lab::with('prodi');
+
+        if ($selectedProdi) {
+            $labQuery->where('prodi_id', $selectedProdi);
+        } elseif ($user->role !== 'superadmin') {
+            $labQuery->where('prodi_id', $user->prodi_id);
+        }
+
+        $labs = $labQuery->get();
+
+        // Query Schedules for the selected date
+        $scheduleQuery = \App\Models\Schedules::with('lab.prodi')
+            ->whereDate('date', $selectedDate)
             ->orderBy('start_time');
 
-        if ($user->role !== 'superadmin') {
-            $query->whereHas('lab', function ($q) use ($user) {
+        if ($selectedProdi) {
+            $scheduleQuery->whereHas('lab', function ($q) use ($selectedProdi) {
+                $q->where('prodi_id', $selectedProdi);
+            });
+        } elseif ($user->role !== 'superadmin') {
+            $scheduleQuery->whereHas('lab', function ($q) use ($user) {
                 $q->where('prodi_id', $user->prodi_id);
             });
         }
 
-        $schedules = $query->get();
+        $schedules = $scheduleQuery->get();
 
-        return view('schedules.index', compact('schedules'));
+        // Data for Create/Edit Modal
+        if ($user->role === 'superadmin') {
+            $allLabs = \App\Models\Lab::all();
+            $allProdis = \App\Models\Prodi::all();
+        } else {
+            $allLabs = \App\Models\Lab::where('prodi_id', $user->prodi_id)->get();
+            $allProdis = \App\Models\Prodi::where('id', $user->prodi_id)->get();
+        }
+
+        return view('schedules.index', [
+            'schedules' => $schedules,
+            'labs' => $labs,
+            'allLabs' => $allLabs,
+            'allProdis' => $allProdis,
+            'selectedDate' => $selectedDate,
+            'selectedProdi' => $selectedProdi
+        ]);
     }
 
     public function create()

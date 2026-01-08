@@ -2,7 +2,7 @@
     $user = auth()->user();
 @endphp
 
-<aside class="w-64 h-screen bg-white border-r flex flex-col fixed left-0 top-0">
+<aside class="w-64 h-screen bg-white border-r flex flex-col fixed left-0 top-0 z-50">
 
     <div class="px-6 py-6 border-b">
         <div class="flex items-center space-x-3">

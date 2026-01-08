@@ -4,7 +4,7 @@
 
     {{-- ROOT ALPINE INSTANCE --}}
     {{-- TAMBAHKAN: ml-64 untuk menggeser konten utama dari sidebar fixed --}}
-    <div x-data="labPage()" x-cloak class="py-6 ml-64"> 
+    <div x-data="labPage()" x-cloak class="py-6">
 
         {{-- ================= HEADER ================= --}}
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 flex items-center justify-between px-1">
@@ -48,111 +48,118 @@
                 <hr class="mb-6 border-gray-200">
 
 
-        {{-- ================= GRID CARD (Gaya Mirip Contoh Gambar) ================= --}}
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {{-- ================= GRID CARD (Gaya Mirip Contoh Gambar) ================= --}}
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
 
-            <template x-if="labs.length === 0">
-                <p class="text-gray-500 col-span-full">Tidak ada hasil.</p>
-            </template>
+                    <template x-if="labs.length === 0">
+                        <p class="text-gray-500 col-span-full">Tidak ada hasil.</p>
+                    </template>
 
-            <template x-for="lab in labs" :key="lab.id">
-                {{-- TAMBAH CLASS "group" pada container card --}}
-                <div class="bg-white rounded-xl shadow-lg hover:shadow-xl transition duration-200 overflow-hidden border border-gray-100 flex flex-col group"> 
+                    <template x-for="lab in labs" :key="lab.id">
+                        {{-- TAMBAH CLASS "group" pada container card --}}
+                        <div
+                            class="bg-white rounded-xl shadow-lg hover:shadow-xl transition duration-200 overflow-hidden border border-gray-100 flex flex-col group">
 
-                    {{-- FOTO & STATUS BADGE --}}
-                    <div class="relative w-full h-40 flex-shrink-0">
-                        <img :src="lab.foto ? ('/storage/' + lab.foto) : 'https://placehold.co/400x200/fafafa/D4D4D4?text=LAB+Image'"
-                            class="w-full h-full object-cover border-b border-gray-100">
-                        
-                        <template x-if="lab.prodi">
-                            <span class="absolute top-2 left-2 px-3 py-1 text-xs font-semibold rounded-full shadow-md bg-blue-300 text-gray-800">
-                                <span x-text="lab.prodi"></span>
-                            </span>
-                        </template>
-                        {{-- Status Badge --}}
-                        <span class="absolute top-2 right-2 px-3 py-1 text-xs font-semibold rounded-full shadow-md" :class="{
+                            {{-- FOTO & STATUS BADGE --}}
+                            <div class="relative w-full h-40 flex-shrink-0">
+                                <img :src="lab.foto ? ('/storage/' + lab.foto) : 'https://placehold.co/400x200/fafafa/D4D4D4?text=LAB+Image'"
+                                    class="w-full h-full object-cover border-b border-gray-100">
+
+                                <template x-if="lab.prodi">
+                                    <span
+                                        class="absolute top-2 left-2 px-3 py-1 text-xs font-semibold rounded-full shadow-md bg-blue-300 text-gray-800">
+                                        <span x-text="lab.prodi"></span>
+                                    </span>
+                                </template>
+                                {{-- Status Badge --}}
+                                <span
+                                    class="absolute top-2 right-2 px-3 py-1 text-xs font-semibold rounded-full shadow-md"
+                                    :class="{
                             'bg-green-300 text-gray-800': lab.status=='Tersedia',
                             'bg-red-300 text-gray-800': lab.status=='Maintenance',
                             'bg-yellow-300 text-gray-800': lab.status=='Digunakan'
                         }" x-text="lab.status"></span>
-                    </div>
+                            </div>
 
-                    <div class="p-4 flex flex-col flex-grow">
+                            <div class="p-4 flex flex-col flex-grow">
 
-                        {{-- NAMA LAB --}}
-                        <h3 class="text-xl font-semibold text-gray-800 group-hover:text-blue-600 transition leading-snug mb-3" x-text="lab.name"></h3>
-                        
-                        {{-- LOKASI (Gedung) --}}
-                        <p class="text-gray-600 text-sm flex items-center gap-1 mb-3">
-                            <span class="material-symbols-outlined text-gray-500 text-base">location_on</span>
-                            <span x-text="lab.lokasi"></span>
-                        </p>
+                                {{-- NAMA LAB --}}
+                                <h3 class="text-xl font-semibold text-gray-800 group-hover:text-blue-600 transition leading-snug mb-3"
+                                    x-text="lab.name"></h3>
 
-                        {{-- INFORMASI P.J., KAPASITAS, DAN PRODI (di dalam box latar belakang) --}}
-                        <div class="bg-gray-50 rounded-lg p-3 space-y-2 flex-grow">
-                            
-                            <div class="flex items-center justify-between"> {{-- Menggunakan justify-between untuk Prodi di sisi kanan --}}
-                                
-                                {{-- Kapasitas & PJ --}}
-                                <div class="flex items-center gap-4">
-                                    <p class="flex items-center gap-2 text-gray-700 text-sm">
-                                        <span class="material-symbols-outlined text-gray-500 text-base">group</span>
-                                        <span class="font-medium" x-text="lab.kapasitas"></span>
-                                    </p>
-                                    
-                                    <div class="h-4 w-px bg-gray-300"></div>
+                                {{-- LOKASI (Gedung) --}}
+                                <p class="text-gray-600 text-sm flex items-center gap-1 mb-3">
+                                    <span class="material-symbols-outlined text-gray-500 text-base">location_on</span>
+                                    <span x-text="lab.lokasi"></span>
+                                </p>
 
-                                    <div class="text-sm text-gray-700">
-                                        <span class="text-xs text-gray-500 block -mb-0.5">Penanggung Jawab</span>
-                                        <span class="font-medium" x-text="lab.pj"></span>
+                                {{-- INFORMASI P.J., KAPASITAS, DAN PRODI (di dalam box latar belakang) --}}
+                                <div class="bg-gray-50 rounded-lg p-3 space-y-2 flex-grow">
+
+                                    <div class="flex items-center justify-between"> {{-- Menggunakan justify-between
+                                        untuk Prodi di sisi kanan --}}
+
+                                        {{-- Kapasitas & PJ --}}
+                                        <div class="flex items-center gap-4">
+                                            <p class="flex items-center gap-2 text-gray-700 text-sm">
+                                                <span
+                                                    class="material-symbols-outlined text-gray-500 text-base">group</span>
+                                                <span class="font-medium" x-text="lab.kapasitas"></span>
+                                            </p>
+
+                                            <div class="h-4 w-px bg-gray-300"></div>
+
+                                            <div class="text-sm text-gray-700">
+                                                <span class="text-xs text-gray-500 block -mb-0.5">Penanggung
+                                                    Jawab</span>
+                                                <span class="font-medium" x-text="lab.pj"></span>
+                                            </div>
+                                        </div>
+
+                                        {{-- PRODI (Di Sisi Kanan) --}}
+                                        <template x-if="lab.prodi">
+                                            <p class="text-gray-600 text-sm flex items-center gap-1.5 flex-shrink-0">
+                                            <div class="w-2 h-2 rounded-full bg-blue-600 flex-shrink-0"></div>
+                                            <span x-text="lab.prodi"></span>
+                                            </p>
+                                        </template>
+
                                     </div>
                                 </div>
 
-                                {{-- PRODI (Di Sisi Kanan) --}}
-                                <template x-if="lab.prodi">
-                                    <p class="text-gray-600 text-sm flex items-center gap-1.5 flex-shrink-0">
-                                        <div class="w-2 h-2 rounded-full bg-blue-600 flex-shrink-0"></div>
-                                        <span x-text="lab.prodi"></span>
-                                    </p>
-                                </template>
+                                {{-- Catatan: Blok PRODI yang sebelumnya di luar box telah dihapus --}}
+
+
+                                {{-- AKSI TOMBOL --}}
+                                <div class="flex gap-2 mt-4 pt-3 border-t border-gray-100">
+
+                                    {{-- EDIT Button (Full width) --}}
+                                    <button @click="openEditModal(lab)" class="flex items-center gap-2 text-blue-700 font-medium bg-blue-50 
+                                hover:bg-blue-100 
+                                px-4 py-2 rounded-lg transition w-full justify-center text-sm border border-blue-200">
+                                        <span class="material-symbols-outlined text-lg">edit</span>
+                                        Edit
+                                    </button>
+
+                                    {{-- DELETE Button (Icon only) --}}
+                                    <form :action="`/labs/${lab.id}`" method="POST"
+                                        onsubmit="return confirm('Apakah Anda yakin ingin menghapus laboratorium ' + lab.name + '?')">
+                                        @csrf @method('DELETE')
+
+                                        <button class="text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 
+                                    p-2 rounded-lg transition border border-red-200 flex-shrink-0">
+                                            <span class="material-symbols-outlined text-lg">delete</span>
+                                        </button>
+                                    </form>
+
+                                </div>
 
                             </div>
                         </div>
 
-                        {{-- Catatan: Blok PRODI yang sebelumnya di luar box telah dihapus --}}
+                    </template>
 
-
-                        {{-- AKSI TOMBOL --}}
-                        <div class="flex gap-2 mt-4 pt-3 border-t border-gray-100">
-
-                            {{-- EDIT Button (Full width) --}}
-                            <button @click="openEditModal(lab)"
-                                class="flex items-center gap-2 text-blue-700 font-medium bg-blue-50 
-                                hover:bg-blue-100 
-                                px-4 py-2 rounded-lg transition w-full justify-center text-sm border border-blue-200">
-                                <span class="material-symbols-outlined text-lg">edit</span>
-                                Edit
-                            </button>
-
-                            {{-- DELETE Button (Icon only) --}}
-                            <form :action="`/labs/${lab.id}`" method="POST"
-                                onsubmit="return confirm('Apakah Anda yakin ingin menghapus laboratorium ' + lab.name + '?')">
-                                @csrf @method('DELETE')
-
-                                <button class="text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 
-                                    p-2 rounded-lg transition border border-red-200 flex-shrink-0">
-                                    <span class="material-symbols-outlined text-lg">delete</span>
-                                </button>
-                            </form>
-
-                        </div>
-
-                    </div>
                 </div>
-                
-            </template>
-
-</div>
 
             </div>
         </div>
@@ -160,9 +167,10 @@
 
 
         {{-- ================= MODAL CREATE ================= --}}
-        <div x-show="openCreate" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 scale-90"
-            x-transition:enter-end="opacity-100 scale-100" x-transition:leave="ease-in duration-200"
-            x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-90"
+        <div x-show="openCreate" x-transition:enter="ease-out duration-300"
+            x-transition:enter-start="opacity-0 scale-90" x-transition:enter-end="opacity-100 scale-100"
+            x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 scale-100"
+            x-transition:leave-end="opacity-0 scale-90"
             class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
 
             <div @click.outside="openCreate = false" class="bg-white w-[34rem] p-6 rounded-xl shadow-lg">
@@ -188,18 +196,25 @@
                         @if(auth()->user()->role === 'superadmin')
                             <div class="relative">
                                 <label class="block">Prodi</label>
-                                <input name="prodi" class="w-full border p-2 rounded mb-3" x-model="searchProdi"
-                                    @input="filterProdi()" autocomplete="off">
+                                {{-- Input ID tersembunyi --}}
+                                <input type="hidden" name="prodi_id" x-model="selectedProdiId">
 
-                                <ul x-show="filteredProdi.length > 0"
+                                {{-- Input Pencarian Nama --}}
+                                <input type="text" class="w-full border p-2 rounded mb-3" x-model="searchProdi"
+                                    @input="filterProdi()" @focus="filterProdi()" placeholder="Ketik nama prodi..."
+                                    autocomplete="off">
+
+                                <ul x-show="filteredProdi.length > 0" @click.outside="filteredProdi = []"
                                     class="absolute z-50 bg-white border w-full rounded shadow max-h-32 overflow-y-auto">
-                                    <template x-for="item in filteredProdi" :key="item">
+                                    <template x-for="item in filteredProdi" :key="item.id">
                                         <li @click="selectProdi(item)"
                                             class="px-3 py-2 hover:bg-blue-600 hover:text-white cursor-pointer text-sm"
-                                            x-text="item"></li>
+                                            x-text="item.name"></li>
                                     </template>
                                 </ul>
                             </div>
+                        @else
+                            {{-- Admin Biasa: Prodi otomatis di backend, tidak perlu input --}}
                         @endif
 
 
@@ -277,15 +292,18 @@
                         @if(auth()->user()->role === 'superadmin')
                             <div class="relative">
                                 <label class="block">Prodi</label>
-                                <input name="prodi" class="w-full border p-2 rounded mb-3" x-model="editData.prodi"
-                                    @input="filterProdi(true)" autocomplete="off">
+                                <input type="hidden" name="prodi_id" x-model="editData.prodi_id">
 
-                                <ul x-show="filteredProdi.length > 0"
+                                <input type="text" class="w-full border p-2 rounded mb-3" x-model="editData.prodi"
+                                    @input="filterProdi(true)" @focus="filterProdi(true)" placeholder="Ketik nama prodi..."
+                                    autocomplete="off">
+
+                                <ul x-show="filteredProdi.length > 0" @click.outside="filteredProdi = []"
                                     class="absolute z-50 bg-white border w-full rounded shadow max-h-32 overflow-y-auto">
-                                    <template x-for="item in filteredProdi" :key="item">
+                                    <template x-for="item in filteredProdi" :key="item.id">
                                         <li @click="selectProdi(item, true)"
                                             class="px-3 py-2 hover:bg-blue-600 hover:text-white cursor-pointer text-sm"
-                                            x-text="item"></li>
+                                            x-text="item.name"></li>
                                     </template>
                                 </ul>
                             </div>
@@ -413,33 +431,43 @@
 
                 openEditModal(lab) {
                     // Membuat salinan data agar perubahan di modal tidak langsung mempengaruhi tampilan grid sebelum disubmit
-                    this.editData = { ...lab }; 
+                    this.editData = { ...lab };
                     this.openEdit = true;
                 },
 
                 searchProdi: "",
+                selectedProdiId: "", // Untuk create form
                 filteredProdi: [],
-                // Menggunakan config('prodi') dari Laravel
-                allProdi: Object.values(@json(config('prodi', []))),
+                // Data dari controller sekarang adalah array of objects {id, name}
+                allProdi: @json($prodiList),
 
 
                 filterProdi(isEdit = false) {
                     const q = isEdit ? this.editData.prodi : this.searchProdi;
-                    if (!q || q.length < 1) {
+                    if (!q && q !== "") {
                         this.filteredProdi = [];
                         return;
                     }
+
+                    // Show all if empty or on focus
+                    if (q === "") {
+                        this.filteredProdi = this.allProdi.slice(0, 10);
+                        return;
+                    }
+
                     const term = q.toLowerCase();
                     this.filteredProdi = this.allProdi.filter(p =>
-                        p.toLowerCase().includes(term)
-                    ).slice(0, 10); // Batasi hingga 10 hasil
+                        p.name.toLowerCase().includes(term)
+                    ).slice(0, 10);
                 },
 
                 selectProdi(item, isEdit = false) {
                     if (isEdit) {
-                        this.editData.prodi = item;
+                        this.editData.prodi = item.name;
+                        this.editData.prodi_id = item.id;
                     } else {
-                        this.searchProdi = item;
+                        this.searchProdi = item.name;
+                        this.selectedProdiId = item.id;
                     }
                     this.filteredProdi = [];
                 },
