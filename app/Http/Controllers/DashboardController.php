@@ -14,12 +14,12 @@ class DashboardController extends Controller
         $schedulesQuery = \App\Models\Schedules::query();
 
         if ($user->role === 'admin') {
-            $labsQuery->where('prodi', $user->prodi);
+            $labsQuery->where('prodi_id', $user->prodi_id);
             $assetsQuery->whereHas('lab', function ($q) use ($user) {
-                $q->where('prodi', $user->prodi);
+                $q->where('prodi_id', $user->prodi_id);
             });
             $schedulesQuery->whereHas('lab', function ($q) use ($user) {
-                $q->where('prodi', $user->prodi);
+                $q->where('prodi_id', $user->prodi_id);
             });
         }
 

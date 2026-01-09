@@ -88,14 +88,17 @@
         <div class="bg-white p-5 rounded shadow mb-6">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="font-semibold text-lg">Daftar Admin</h2>
-                <span class="text-xs bg-gray-100 px-2 py-1 rounded text-gray-500 font-bold uppercase tracking-wider">{{ count($admins) }} Total</span>
+                <span
+                    class="text-xs bg-gray-100 px-2 py-1 rounded text-gray-500 font-bold uppercase tracking-wider">{{ count($admins) }}
+                    Total</span>
             </div>
 
             <div class="space-y-2">
                 @forelse($admins as $admin)
                     <div class="border rounded-lg p-3 flex justify-between items-center hover:bg-gray-50 transition">
                         <div class="flex items-center">
-                            <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 mr-3">
+                            <div
+                                class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 mr-3">
                                 <span class="material-symbols-outlined">person</span>
                             </div>
                             <div>
@@ -105,7 +108,8 @@
                             @php
                                 $prodiName = \App\Models\Prodi::find($admin->prodi_id)?->name ?? '-';
                             @endphp
-                            <span class="ml-4 px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-black uppercase tracking-widest">{{ $prodiName }}</span>
+                            <span
+                                class="ml-4 px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-black uppercase tracking-widest">{{ $prodiName }}</span>
                         </div>
 
                         <div class="flex gap-2">
@@ -133,21 +137,27 @@
         <div class="bg-white p-5 rounded shadow">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="font-semibold text-lg">Daftar Prodi</h2>
-                <span class="text-xs bg-gray-100 px-2 py-1 rounded text-gray-500 font-bold uppercase tracking-wider">{{ count($prodis) }} Total</span>
+                <span
+                    class="text-xs bg-gray-100 px-2 py-1 rounded text-gray-500 font-bold uppercase tracking-wider">{{ count($prodis) }}
+                    Total</span>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                 @forelse($prodis as $p)
-                    <div class="border rounded-lg p-3 flex justify-between items-center group hover:border-blue-200 hover:shadow-sm transition bg-white">
+                    <div
+                        class="border rounded-lg p-3 flex justify-between items-center group hover:border-blue-200 hover:shadow-sm transition bg-white">
                         <div class="flex items-center">
-                            <div class="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-500 mr-3">
+                            <div
+                                class="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-500 mr-3">
                                 <span class="material-symbols-outlined text-sm">school</span>
                             </div>
                             <span class="font-bold text-gray-800 text-sm">{{ $p->name }}</span>
                         </div>
-                        <form action="{{ route('prodis.destroy', $p->id) }}" method="POST" onsubmit="return confirm('Hapus prodi ini?');">
+                        <form action="{{ route('prodis.destroy', $p->id) }}" method="POST"
+                            onsubmit="return confirm('Hapus prodi ini?');">
                             @csrf @method('DELETE')
-                            <button class="p-1.5 text-red-500 opacity-0 group-hover:opacity-100 hover:bg-red-50 rounded transition">
+                            <button
+                                class="p-1.5 text-red-500 opacity-0 group-hover:opacity-100 hover:bg-red-50 rounded transition">
                                 <span class="material-symbols-outlined text-[18px]">delete</span>
                             </button>
                         </form>
@@ -220,7 +230,7 @@
                 openEditModal(user) {
                     this.editData = {
                         ...user,
-                        prodi_name: user.prodi_name ?? ''
+                        prodi_name: user.prodi ? user.prodi.name : ''
                     };
                     this.openEdit = true;
                 },

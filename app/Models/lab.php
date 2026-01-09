@@ -40,7 +40,7 @@ class Lab extends Model
 
     public function assets()
     {
-        return $this->hasMany(Assetlab::class);
+        return $this->hasMany(AssetLab::class);
     }
 
     public function schedules()

@@ -52,14 +52,12 @@
             </a>
         @endif
 
-        @if($user->role !== 'superadmin')
-            {{-- Peminjaman Barang --}}
-            <a href="{{ route('borrowings.index') }}"
-                class="menu-item {{ request()->routeIs('borrowings.*') ? 'active' : '' }}">
-                <span class="material-symbols-outlined">shopping_bag</span>
-                <span>Peminjaman Barang</span>
-            </a>
-        @endif
+        {{-- Peminjaman Barang --}}
+        <a href="{{ route('borrowings.index') }}"
+            class="menu-item {{ request()->routeIs('borrowings.*') ? 'active' : '' }}">
+            <span class="material-symbols-outlined">shopping_bag</span>
+            <span>Peminjaman Barang</span>
+        </a>
     </nav>
 
     <div class="px-4 py-6 border-t">

@@ -47,14 +47,14 @@ class UserController extends Controller
         $r->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $user->id,
-            'prodi' => 'required|string',
+            'prodi_id' => 'required|exists:prodis,id', // foreign key
             'password' => 'nullable|min:5',
         ]);
 
         $data = [
             'name' => $r->name,
             'email' => $r->email,
-            'prodi' => $r->prodi,
+            'prodi_id' => $r->prodi_id, // foreign key
         ];
 
         if ($r->filled('password')) {

@@ -2,6 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Borrowing;
+use App\Models\Lab;
+use App\Models\User;
+use App\Models\AssetLab;
 use Illuminate\Http\Request;
 
 class BorrowingController extends Controller
@@ -9,25 +13,26 @@ class BorrowingController extends Controller
     public function index()
     {
         $user = auth()->user();
-        if ($user->role === 'superadmin') {
-            abort(403, 'Unauthorized action.');
+
+        $borrowingsQuery = Borrowing::with(['user', 'lab', 'asset'])->latest();
+
+        if ($user->role !== 'superadmin') {
+            $borrowingsQuery->whereHas('lab', function ($q) use ($user) {
+                $q->where('prodi_id', $user->prodi_id);
+            });
         }
 
-        $borrowings = \App\Models\Borrowing::with(['user', 'lab', 'asset'])
-            ->whereHas('lab', function ($q) use ($user) {
-                $q->where('prodi', $user->prodi);
-            })
-            ->latest()
-            ->get();
+        $borrowings = $borrowingsQuery->get();
 
-        return view('borrowings.index', compact('borrowings'));
-    }
+        if ($user->role === 'superadmin') {
+            $labs = Lab::with('assets')->get();
+            $users = User::all();
+        } else {
+            $labs = Lab::where('prodi_id', $user->prodi_id)->with('assets')->get();
+            $users = User::all();
+        }
 
-    public function create()
-    {
-        $labs = \App\Models\Lab::where('prodi', auth()->user()->prodi)->with('assets')->get();
-        $users = \App\Models\User::all(); // Assuming admin can select any user to borrow
-        return view('borrowings.create', compact('labs', 'users'));
+        return view('borrowings.index', compact('borrowings', 'labs', 'users'));
     }
 
     public function store(Request $request)
@@ -41,26 +46,18 @@ class BorrowingController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        \App\Models\Borrowing::create($validated);
+        Borrowing::create($validated);
 
-        return redirect()->route('borrowings.index')->with('success', 'Borrowing recorded successfully.');
+        return back()->with('success', 'Peminjaman berhasil dicatat.');
     }
 
-    public function edit(\App\Models\Borrowing $borrowing)
+    public function show(Borrowing $borrowing)
     {
-        if (auth()->user()->prodi !== $borrowing->lab->prodi) {
-            abort(403, 'Unauthorized action.');
-        }
-        $labs = \App\Models\Lab::where('prodi', auth()->user()->prodi)->with('assets')->get();
-        $users = \App\Models\User::all();
-        return view('borrowings.edit', compact('borrowing', 'labs', 'users'));
+        return response()->json($borrowing->load(['user', 'lab', 'asset']));
     }
 
-    public function update(Request $request, \App\Models\Borrowing $borrowing)
+    public function update(Request $request, Borrowing $borrowing)
     {
-        if (auth()->user()->prodi !== $borrowing->lab->prodi) {
-            abort(403, 'Unauthorized action.');
-        }
         $validated = $request->validate([
             'user_id' => 'required|exists:users,id',
             'lab_id' => 'required|exists:labs,id',
@@ -73,15 +70,12 @@ class BorrowingController extends Controller
 
         $borrowing->update($validated);
 
-        return redirect()->route('borrowings.index')->with('success', 'Borrowing updated successfully.');
+        return back()->with('success', 'Peminjaman berhasil diupdate.');
     }
 
-    public function destroy(\App\Models\Borrowing $borrowing)
+    public function destroy(Borrowing $borrowing)
     {
-        if (auth()->user()->prodi !== $borrowing->lab->prodi) {
-            abort(403, 'Unauthorized action.');
-        }
         $borrowing->delete();
-        return redirect()->route('borrowings.index')->with('success', 'Borrowing deleted successfully.');
+        return back()->with('success', 'Peminjaman berhasil dihapus.');
     }
 }
