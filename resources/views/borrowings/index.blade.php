@@ -98,6 +98,21 @@
             <div class="flex-1 min-w-0">
                 {{-- Table Card --}}
                 <div class="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden ring-1 ring-slate-100/50">
+                    <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between gap-4">
+                        <div class="flex items-center gap-3">
+                            <label class="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">Status</label>
+                            <select x-model="selectedStatus" class="rounded-2xl px-4 py-2 border bg-white text-sm font-bold">
+                                <option value="all">Semua Status</option>
+                                <option value="pending">Menunggu</option>
+                                <option value="approved">Disetujui</option>
+                                <option value="rejected">Ditolak</option>
+                                <option value="returned">Kembali</option>
+                            </select>
+                        </div>
+                        <div class="text-sm text-slate-400 font-medium">
+                            <span x-text="filteredBorrowings.length + ' entri'"></span>
+                        </div>
+                    </div>
                     <div class="overflow-x-auto scrollbar-none">
                         <table class="w-full text-left border-collapse">
                             <thead>
@@ -111,7 +126,9 @@
                             </thead>
                             <tbody class="divide-y divide-slate-50">
                                 @forelse ($borrowings as $b)
-                                    <tr class="hover:bg-blue-50/30 transition-all duration-300 group">
+                                    <tr class="hover:bg-blue-50/30 transition-all duration-300 group"
+                                        data-lab-id="{{ $b->lab_id }}" data-status="{{ $b->status }}"
+                                        x-show="(!selectedLabId || String($el.dataset.labId) === String(selectedLabId)) && (selectedStatus === 'all' || $el.dataset.status === selectedStatus)">
                                         <td class="px-8 py-6">
                                             <div class="flex items-center gap-4">
                                                 <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-white shadow-inner flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform duration-500">
@@ -182,7 +199,7 @@
                                         </td>
                                     </tr>
                                 @empty
-                                    <tr>
+                                    <tr x-show="borrowings.length === 0" x-cloak>
                                         <td colspan="5" class="px-8 py-24 text-center">
                                             <div class="flex flex-col items-center group">
                                                 <div class="w-24 h-24 rounded-[2rem] bg-slate-50 flex items-center justify-center mb-6 text-slate-200 group-hover:scale-110 transition-transform duration-700">
@@ -193,7 +210,11 @@
                                             </div>
                                         </td>
                                     </tr>
+
                                 @endforelse
+                                    <tr x-show="borrowings.length > 0 && filteredBorrowings.length === 0" x-cloak>
+                                        <td colspan="5" class="px-8 py-10 text-center text-slate-400 font-medium">Tidak ada peminjaman yang sesuai filter.</td>
+                                    </tr>
                             </tbody>
                         </table>
                     </div>
@@ -345,6 +366,7 @@
                     editMode: false,
                     searchTerm: '',
                     selectedLabId: null,
+                    selectedStatus: 'all',
                     expandedProdiId: null,
                     form: {
                         id: '',
@@ -374,8 +396,15 @@
                     },
 
                     get filteredBorrowings() {
-                        if (!this.selectedLabId) return this.borrowings;
-                        return this.borrowings.filter(b => b.lab_id === this.selectedLabId);
+                        return this.borrowings.filter(b => {
+                            if (this.selectedLabId && String(b.lab_id) !== String(this.selectedLabId)) {
+                                return false;
+                            }
+                            if (this.selectedStatus && this.selectedStatus !== 'all' && b.status !== this.selectedStatus) {
+                                return false;
+                            }
+                            return true;
+                        });
                     },
 
                     get filteredGroupedLabs() {
