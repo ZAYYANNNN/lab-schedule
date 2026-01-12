@@ -16,7 +16,7 @@ class AssetLab extends Model
     protected $keyType = 'string';
 
     // Sesuaikan dengan kolom di migration: nama, kode_aset, jumlah
-    protected $fillable = ['id', 'lab_id', 'nama', 'kode_aset', 'jumlah'];
+    protected $fillable = ['id', 'lab_id', 'nama', 'kategori', 'kode_aset', 'jumlah', 'maintenance_count'];
 
     protected static function boot()
     {

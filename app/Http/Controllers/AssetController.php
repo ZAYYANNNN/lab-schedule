@@ -22,8 +22,12 @@ class AssetController extends Controller
         }
         $labs = $labQuery->orderBy('name')->get();
 
-        // Fetch all assets for these labs
-        $assetQuery = AssetLab::with(['lab.prodi']);
+        // Fetch all assets for these labs, with active borrowing counts
+        $assetQuery = AssetLab::with(['lab.prodi'])->withCount([
+            'borrowings as borrowed_count' => function ($q) {
+                $q->whereIn('status', ['pending', 'approved']);
+            }
+        ]);
         if ($user->role === 'admin') {
             $assetQuery->whereHas('lab', function ($q) use ($user) {
                 $q->where('prodi_id', $user->prodi_id);
@@ -52,11 +56,17 @@ class AssetController extends Controller
      */
     public function store(Request $request)
     {
+        if (auth()->user()->role !== 'admin') {
+            abort(403, 'Hanya Admin Prodi yang dapat menambah aset.');
+        }
+
         $validated = $request->validate([
             'lab_id' => 'required|exists:labs,id',
             'nama' => 'required|string|max:255',
+            'kategori' => 'nullable|string|max:255',
             'kode_aset' => 'nullable|string|max:255',
             'jumlah' => 'required|integer|min:1',
+            'maintenance_count' => 'nullable|integer|min:0',
         ]);
 
         // Pastikan lab yang dipilih milik prodi admin (jika bukan superadmin)
@@ -92,11 +102,17 @@ class AssetController extends Controller
      */
     public function update(Request $request, AssetLab $asset)
     {
+        if (auth()->user()->role !== 'admin') {
+            abort(403, 'Hanya Admin Prodi yang dapat mengubah aset.');
+        }
+
         $validated = $request->validate([
             'lab_id' => 'required|exists:labs,id',
             'nama' => 'required|string|max:255',
+            'kategori' => 'nullable|string|max:255',
             'kode_aset' => 'nullable|string|max:255',
             'jumlah' => 'required|integer|min:1',
+            'maintenance_count' => 'nullable|integer|min:0',
         ]);
 
         // Pastikan lab tujuan juga milik prodi admin (jika bukan superadmin)
@@ -117,6 +133,10 @@ class AssetController extends Controller
      */
     public function destroy(AssetLab $asset)
     {
+        if (auth()->user()->role !== 'admin') {
+            abort(403, 'Hanya Admin Prodi yang dapat menghapus aset.');
+        }
+
         $this->authorizeAssetOwnership($asset);
 
         $asset->delete();

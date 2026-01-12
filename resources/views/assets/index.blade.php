@@ -1,14 +1,18 @@
-<x-app-layout>
-    <div class="max-w-[1600px] mx-auto py-8 px-4 sm:px-6 lg:px-8" x-data="{
+<x-app-layout title="Manajemen Aset Lab">
+    <div class="max-w-[1600px] mx-auto py-2" x-data="{
         selectedLabId: '{{ $labs->first()->id ?? '' }}',
         showModal: false,
         editMode: false,
+        searchTerm: '',
+        expandedProdiId: null,
         formData: {
             id: '',
             lab_id: '',
             nama: '',
+            kategori: '',
             kode_aset: '',
-            jumlah: 1
+            jumlah: 1,
+            maintenance_count: 0
         },
         assets: {{ $assets->toJson() }},
         labs: {{ $labs->toJson() }},
@@ -19,6 +23,38 @@
         get selectedLab() {
             return this.labs.find(l => l.id === this.selectedLabId);
         },
+        get filteredGroupedLabs() {
+            const grouped = {};
+            this.labs.forEach(lab => {
+                const prodiName = lab.prodi ? lab.prodi.name : 'Lainnya';
+                const prodiId = lab.prodi ? lab.prodi.id : 'other';
+                if (!grouped[prodiId]) {
+                    grouped[prodiId] = {
+                        id: prodiId,
+                        name: prodiName,
+                        labs: []
+                    };
+                }
+                grouped[prodiId].labs.push(lab);
+            });
+
+            const term = this.searchTerm.toLowerCase();
+            if (!term) return Object.values(grouped);
+
+            return Object.values(grouped).filter(group => {
+                const prodiMatch = group.name.toLowerCase().includes(term);
+                const labMatch = group.labs.some(lab => lab.name.toLowerCase().includes(term));
+                return prodiMatch || labMatch;
+            }).map(group => {
+                if (!group.name.toLowerCase().includes(term)) {
+                    return {
+                        ...group,
+                        labs: group.labs.filter(lab => lab.name.toLowerCase().includes(term))
+                    };
+                }
+                return group;
+            });
+        },
         openCreateModal(labId = null) {
             this.editMode = false;
             if (labId) {
@@ -28,8 +64,10 @@
                 id: '',
                 lab_id: this.selectedLabId,
                 nama: '',
+                kategori: '',
                 kode_aset: '',
-                jumlah: 1
+                jumlah: 1,
+                maintenance_count: 0
             };
             this.showModal = true;
         },
@@ -39,48 +77,149 @@
                 id: asset.id,
                 lab_id: asset.lab_id,
                 nama: asset.nama,
+                kategori: asset.kategori || '',
                 kode_aset: asset.kode_aset,
-                jumlah: asset.jumlah
+                jumlah: asset.jumlah,
+                maintenance_count: asset.maintenance_count || 0
             };
             this.showModal = true;
         }
     }">
 
-        <div class="flex flex-col md:flex-row gap-8 min-h-[700px]">
-            {{-- SIDEBAR: LIST LABS --}}
-            <aside class="w-full md:w-72 flex-shrink-0">
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden sticky top-8">
-                    <div class="p-5 border-b border-slate-100 bg-slate-50/50">
-                        <h2 class="font-bold text-slate-800 flex items-center">
-                            <span class="material-symbols-outlined mr-2 text-blue-600">door_front</span>
-                            Daftar Lab
-                        </h2>
+        {{-- Modern Gradient Header --}}
+        <div
+            class="bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-700 rounded-[2rem] p-6 sm:p-10 mb-8 shadow-2xl shadow-blue-200 relative overflow-hidden transition-all duration-700 hover:shadow-blue-300/50">
+            {{-- Decorative Elements --}}
+            <div class="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl"></div>
+            <div class="absolute bottom-0 left-0 w-48 h-48 bg-blue-400/20 rounded-full -ml-10 -mb-10 blur-2xl"></div>
+
+            <div class="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                <div>
+                    <div class="flex items-center gap-3 mb-4">
+                        <span
+                            class="px-4 py-1.5 rounded-full bg-white/20 backdrop-blur-md text-white text-[10px] font-black uppercase tracking-[0.2em] border border-white/20">Inventory
+                            System</span>
+                        <span class="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></span>
                     </div>
-                    <div class="max-h-[600px] overflow-y-auto scrollbar-thin select-none">
-                        @forelse($labs as $lab)
-                            <div @click="selectedLabId = '{{ $lab->id }}'"
-                                :class="selectedLabId === '{{ $lab->id }}' ? 'bg-blue-50 border-l-4 border-blue-500' : 'hover:bg-slate-50 border-l-4 border-transparent'"
-                                class="p-4 cursor-pointer transition-all group">
-                                <div class="flex items-center gap-2">
-                                    <div class="font-bold text-sm truncate"
-                                        :class="selectedLabId === '{{ $lab->id }}' ? 'text-blue-700' : 'text-slate-700'">
-                                        {{ $lab->name }}
+                    <h1 class="text-4xl md:text-5xl font-black text-white tracking-tighter mb-3 leading-none">Inventaris
+                        Lab</h1>
+                    <p class="text-blue-100 font-medium text-base opacity-90 max-w-xl leading-relaxed">Kelola dan pantau
+                        seluruh aset perlengkapan di setiap laboratorium secara terpusat.</p>
+                </div>
+                <div
+                    class="flex items-center gap-4 bg-white/10 backdrop-blur-xl p-4 sm:p-5 rounded-[1.5rem] border border-white/20 shadow-inner group hover:bg-white/20 transition-all duration-500 hover:scale-105">
+                    <div
+                        class="w-12 h-12 rounded-xl bg-white flex items-center justify-center text-blue-600 shadow-xl group-hover:rotate-12 transition-transform duration-500">
+                        <span class="material-symbols-outlined text-2xl">inventory_2</span>
+                    </div>
+                    <div class="pr-4">
+                        <p class="text-xs font-black text-blue-200 uppercase tracking-widest mb-1 opacity-70">Total Aset
+                        </p>
+                        <p class="text-white font-black text-xl tracking-tight">
+                            {{ number_format($assets->sum('jumlah')) }} Items
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex flex-col lg:flex-row gap-10 items-start px-2">
+            {{-- SIDEBAR: LIST LABS --}}
+            <aside class="w-full lg:w-96 flex-shrink-0 lg:sticky lg:top-8">
+                <div
+                    class="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden ring-1 ring-slate-100/50">
+                    <div class="px-8 py-7 border-b border-slate-50 bg-slate-50/50">
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
+                                <span class="material-symbols-outlined text-base">domain</span>
+                            </div>
+                            <h2 class="font-black text-slate-800 uppercase text-xs tracking-[0.2em]">Daftar Laboratorium
+                            </h2>
+                        </div>
+                        <div class="relative group">
+                            <span
+                                class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors text-[20px]">search</span>
+                            <input type="text" x-model="searchTerm" placeholder="Cari prodi atau lab..."
+                                class="w-full bg-white border-slate-100 rounded-2xl pl-12 pr-4 py-3.5 text-sm font-bold focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all placeholder:text-slate-300 shadow-inner">
+                        </div>
+                    </div>
+
+                    <div class="max-h-[600px] overflow-y-auto scrollbar-none select-none p-4 space-y-2">
+                        @if(auth()->user()->role === 'superadmin')
+                            <template x-for="prodi in filteredGroupedLabs" :key="prodi.id">
+                                <div class="group">
+                                    {{-- Prodi Item --}}
+                                    <div @click="expandedProdiId = (expandedProdiId === prodi.id ? null : prodi.id)"
+                                        class="p-4 flex items-center justify-between cursor-pointer rounded-2xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100 group/prodi">
+                                        <div class="flex items-center gap-4">
+                                            <div
+                                                class="w-10 h-10 rounded-xl bg-slate-100 text-slate-400 group-hover/prodi:bg-blue-100 group-hover/prodi:text-blue-600 flex items-center justify-center transition-colors shadow-sm">
+                                                <span class="material-symbols-outlined text-[20px]">school</span>
+                                            </div>
+                                            <div class="font-black text-sm text-slate-700 tracking-tight"
+                                                x-text="prodi.name"></div>
+                                        </div>
+                                        <span
+                                            class="material-symbols-outlined text-slate-300 transition-transform duration-300"
+                                            :class="expandedProdiId === prodi.id ? 'rotate-180' : ''">expand_more</span>
                                     </div>
-                                    @if(auth()->user()->role === 'admin' || auth()->user()->role === 'superadmin')
-                                        <button @click.stop="openCreateModal('{{ $lab->id }}')" 
-                                            class="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-blue-100 rounded-lg text-blue-600 flex items-center justify-center flex-shrink-0"
-                                            title="Tambah Aset ke {{ $lab->name }}">
-                                            <span class="material-symbols-outlined text-[20px]">add</span>
-                                        </button>
-                                    @endif
+
+                                    {{-- Lab List (Dropdown) --}}
+                                    <div x-show="expandedProdiId === prodi.id || searchTerm.length > 0"
+                                        x-transition:enter="transition ease-out duration-300"
+                                        x-transition:enter-start="opacity-0 -translate-y-4"
+                                        x-transition:enter-end="opacity-100 translate-y-0" class="mt-1 space-y-1">
+                                        <template x-for="lab in prodi.labs" :key="lab.id">
+                                            <div @click="selectedLabId = lab.id"
+                                                :class="selectedLabId === lab.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'text-slate-500 hover:bg-white hover:shadow-md hover:text-blue-600'"
+                                                class="ml-12 mr-2 p-3.5 rounded-2xl cursor-pointer transition-all flex items-center justify-between group/lab border border-transparent hover:border-slate-100">
+                                                <div class="flex items-center gap-3 overflow-hidden">
+                                                    <span
+                                                        class="material-symbols-outlined text-[18px] opacity-40">door_front</span>
+                                                    <div class="text-[13px] font-black tracking-tight truncate"
+                                                        x-text="lab.name"></div>
+                                                </div>
+                                                @if(auth()->user()->role === 'admin')
+                                                    <button @click.prevent.stop="openCreateModal(lab.id)"
+                                                        class="w-7 h-7 rounded-lg bg-white/20 backdrop-blur-md opacity-0 group-hover/lab:opacity-100 transition-opacity text-current flex items-center justify-center flex-shrink-0 hover:scale-110">
+                                                        <span class="material-symbols-outlined text-[18px]">add</span>
+                                                    </button>
+                                                @endif
+                                            </div>
+                                        </template>
+                                    </div>
                                 </div>
-                                <div class="text-[11px] text-slate-400 font-medium mt-0.5">{{ $lab->lokasi }}</div>
+                            </template>
+
+                            <div x-show="filteredGroupedLabs.length === 0"
+                                class="p-12 text-center text-slate-400 italic text-sm">
+                                <span class="material-symbols-outlined text-4xl mb-4 opacity-20 block">search_off</span>
+                                Tidak ada hasil untuk "<span x-text="searchTerm" class="font-bold"></span>"
                             </div>
-                        @empty
-                            <div class="p-8 text-center text-slate-400 italic text-sm">
-                                Belum ada lab.
+                        @else
+                            {{-- Simple Lab List for Admin --}}
+                            <div class="space-y-2">
+                                @foreach($labs as $lab)
+                                    <div @click="selectedLabId = '{{ $lab->id }}'"
+                                        :class="selectedLabId === '{{ $lab->id }}' ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'text-slate-500 hover:bg-slate-50 hover:text-blue-600'"
+                                        class="p-4 cursor-pointer transition-all rounded-[1.5rem] border border-transparent flex items-center justify-between group">
+                                        <div class="flex items-center gap-4">
+                                            <div class="w-10 h-10 rounded-xl flex items-center justify-center transition-colors"
+                                                :class="selectedLabId === '{{ $lab->id }}' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-400 group-hover:bg-blue-100 group-hover:text-blue-500'">
+                                                <span class="material-symbols-outlined text-[20px]">door_front</span>
+                                            </div>
+                                            <div class="font-black text-sm tracking-tighter truncate">{{ $lab->name }}</div>
+                                        </div>
+                                        @if(auth()->user()->role === 'admin')
+                                            <button @click.prevent.stop="openCreateModal('{{ $lab->id }}')"
+                                                class="w-8 h-8 rounded-lg bg-white/20 opacity-0 group-hover:opacity-100 transition-all text-current flex items-center justify-center flex-shrink-0 hover:scale-110">
+                                                <span class="material-symbols-outlined text-[18px]">add</span>
+                                            </button>
+                                        @endif
+                                    </div>
+                                @endforeach
                             </div>
-                        @endforelse
+                        @endif
                     </div>
                 </div>
             </aside>
@@ -90,65 +229,141 @@
                 {{-- HEADER LAB AKTIF --}}
                 <template x-if="selectedLab">
                     <div
-                        class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                        <div>
-                            <div class="flex items-center gap-3 mb-1">
-                                <h1 class="text-2xl font-black text-slate-800 tracking-tight" x-text="selectedLab.name">
-                                </h1>
-                                <span
-                                    class="px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-black uppercase tracking-widest"
-                                    x-text="selectedLab.kode_lab"></span>
-                            </div>
-                            <p class="text-slate-500 text-sm flex items-center font-medium">
-                                <span class="material-symbols-outlined text-xs mr-1 text-slate-400">location_on</span>
-                                <span x-text="selectedLab.lokasi"></span>
-                                <span class="mx-2 text-slate-300">•</span>
-                                <span class="material-symbols-outlined text-xs mr-1 text-slate-400">groups</span>
-                                <span x-text="selectedLab.kapasitas + ' Kapasitas'"></span>
-                            </p>
+                        class="bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 border border-slate-100 p-6 mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 relative overflow-hidden group">
+                        {{-- Decorative background glow --}}
+                        <div
+                            class="absolute -right-10 -top-10 w-40 h-40 bg-blue-50 rounded-full blur-3xl opacity-50 group-hover:opacity-100 transition-opacity duration-700">
                         </div>
-                        @if(auth()->user()->role === 'admin' || auth()->user()->role === 'superadmin')
+
+                        <div class="relative z-10 flex items-center gap-6">
+                            <div
+                                class="w-20 h-20 rounded-[2rem] bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center text-blue-600 shadow-inner border border-white">
+                                <span class="material-symbols-outlined text-4xl">home_storage</span>
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-3 mb-2">
+                                    <h1 class="text-2xl font-black text-slate-900 tracking-tighter"
+                                        x-text="selectedLab.name"></h1>
+                                    <span
+                                        class="px-3 py-1 rounded-full bg-blue-600 text-white text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-blue-200"
+                                        x-text="selectedLab.kode_lab"></span>
+                                </div>
+                                <div
+                                    class="flex flex-wrap items-center gap-y-2 gap-x-6 text-slate-400 font-bold text-xs uppercase tracking-widest">
+                                    <p class="flex items-center gap-2">
+                                        <span
+                                            class="material-symbols-outlined text-base text-blue-500">location_on</span>
+                                        <span x-text="selectedLab.lokasi" class="text-slate-600"></span>
+                                    </p>
+                                    <p class="flex items-center gap-2">
+                                        <span class="material-symbols-outlined text-base text-indigo-500">groups</span>
+                                        <span x-text="selectedLab.kapasitas + ' Kapasitas'"
+                                            class="text-slate-600"></span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        @if(auth()->user()->role === 'admin')
                             <button @click="openCreateModal()"
-                                class="bg-slate-900 border border-slate-900 text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center shadow-lg shadow-slate-200 hover:bg-slate-800 transition active:scale-95">
-                                <span class="material-symbols-outlined mr-2 text-[20px]">add</span>
+                                class="relative z-10 bg-slate-900 text-white px-8 py-4 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] flex items-center gap-3 shadow-2xl shadow-slate-900/20 hover:bg-blue-600 hover:shadow-blue-200 transition-all active:scale-95 group/btn">
+                                <span
+                                    class="material-symbols-outlined text-xl group-hover/btn:rotate-90 transition-transform">add</span>
                                 Tambah Aset
                             </button>
                         @endif
                     </div>
                 </template>
 
-                {{-- GRID ASSET --}}
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {{-- GRID ASSET REDESIGNED --}}
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                     <template x-for="asset in filteredAssets" :key="asset.id">
-                        <div
-                            class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 hover:shadow-md transition-all group relative overflow-hidden">
-                            <div class="flex justify-between items-start mb-4">
-                                <div
-                                    class="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-500 transition-colors">
-                                    <span class="material-symbols-outlined">inventory_2</span>
+                        <div class="group bg-white rounded-[1.5rem] border-2 transition-all duration-500 hover:shadow-2xl overflow-hidden flex flex-col h-full"
+                            :class="(asset.jumlah - (asset.borrowed_count || 0) - (asset.maintenance_count || 0)) <= 5 
+                                ? 'border-amber-100 hover:border-amber-400' 
+                                : 'border-emerald-50 hover:border-emerald-400'">
+
+                            <div class="p-6 flex-grow">
+                                <div class="flex justify-between items-start mb-4">
+                                    <div class="flex-grow min-w-0">
+                                        <h3 class="font-black text-slate-800 text-xl tracking-tighter leading-tight truncate pr-2"
+                                            x-text="asset.nama"></h3>
+                                        <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-1"
+                                            x-text="asset.kode_aset || 'NO-ID'"></p>
+                                    </div>
+                                    <div class="flex-shrink-0">
+                                        <span
+                                            class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm"
+                                            :class="(asset.jumlah - (asset.borrowed_count || 0) - (asset.maintenance_count || 0)) <= 5 
+                                                ? 'bg-gradient-to-r from-amber-400 to-orange-500 text-white' 
+                                                : 'bg-gradient-to-r from-emerald-400 to-teal-500 text-white'">
+                                            <span
+                                                x-text="(asset.jumlah - (asset.borrowed_count || 0) - (asset.maintenance_count || 0)) <= 5 ? 'Low Stock' : 'Available'"></span>
+                                        </span>
+                                    </div>
                                 </div>
-                                <div class="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-black"
-                                    x-text="'Stok: ' + asset.jumlah"></div>
+
+                                <div class="flex items-center gap-3 mb-6">
+                                    <div
+                                        class="flex items-center gap-1.5 text-blue-600 font-black text-[10px] uppercase tracking-wider">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
+                                        <span x-text="selectedLab.name"></span>
+                                    </div>
+                                    <div class="text-slate-400 font-bold text-[10px] uppercase tracking-wider bg-slate-50 px-2 py-0.5 rounded-md"
+                                        x-text="asset.kategori || 'Uncategorized'"></div>
+                                </div>
+
+                                <div class="flex justify-between items-end mb-4">
+                                    <span class="text-[11px] font-black text-slate-400 uppercase tracking-[0.1em]">Total
+                                        Units</span>
+                                    <span class="text-2xl font-black text-slate-800 tracking-tighter"
+                                        x-text="asset.jumlah"></span>
+                                </div>
+
+                                <div class="grid grid-cols-3 gap-2 mb-6">
+                                    <div
+                                        class="bg-emerald-50 rounded-2xl p-3 flex flex-col items-center justify-center border border-emerald-100/50">
+                                        <span class="text-emerald-600 font-black text-lg leading-none"
+                                            x-text="asset.jumlah - (asset.borrowed_count || 0) - (asset.maintenance_count || 0)"></span>
+                                        <span
+                                            class="text-[9px] font-black text-emerald-600/60 uppercase mt-1">Available</span>
+                                    </div>
+                                    <div
+                                        class="bg-blue-50 rounded-2xl p-3 flex flex-col items-center justify-center border border-blue-100/50">
+                                        <span class="text-blue-600 font-black text-lg leading-none"
+                                            x-text="asset.borrowed_count || 0"></span>
+                                        <span
+                                            class="text-[9px] font-black text-blue-600/60 uppercase mt-1">Borrowed</span>
+                                    </div>
+                                    <div
+                                        class="bg-slate-50 rounded-2xl p-3 flex flex-col items-center justify-center border border-slate-200/50">
+                                        <span class="text-slate-600 font-black text-lg leading-none"
+                                            x-text="asset.maintenance_count || 0"></span>
+                                        <span
+                                            class="text-[9px] font-black text-slate-600/60 uppercase mt-1">Maint'</span>
+                                    </div>
+                                </div>
+
+                                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                                    <div class="h-full transition-all duration-1000 ease-out"
+                                        :class="(asset.jumlah - (asset.borrowed_count || 0) - (asset.maintenance_count || 0)) <= 5 ? 'bg-amber-500' : 'bg-emerald-500'"
+                                        :style="'width: ' + ((asset.jumlah - (asset.borrowed_count || 0) - (asset.maintenance_count || 0)) / asset.jumlah * 100) + '%'">
+                                    </div>
+                                </div>
                             </div>
 
-                            <h3 class="font-bold text-slate-800 mb-1 group-hover:text-blue-600 transition-colors"
-                                x-text="asset.nama"></h3>
-                            <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-4"
-                                x-text="'KODE: ' + (asset.kode_aset || '-')"></p>
-
-                            @if(auth()->user()->role === 'admin' || auth()->user()->role === 'superadmin')
-                                <div class="flex items-center gap-2 pt-4 border-t border-slate-50">
+                            @if(auth()->user()->role === 'admin')
+                                <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center gap-3">
                                     <button @click="openEditModal(asset)"
-                                        class="flex-1 text-[11px] font-bold py-2 rounded-lg bg-slate-50 text-slate-600 hover:bg-blue-50 hover:text-blue-600 transition flex items-center justify-center">
-                                        <span class="material-symbols-outlined text-[16px] mr-1.5">edit</span>
+                                        class="flex-1 text-[10px] font-black py-3 rounded-xl bg-white text-slate-600 border border-slate-200 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all uppercase tracking-[0.2em] flex items-center justify-center gap-2 shadow-sm">
+                                        <span class="material-symbols-outlined text-[18px]">edit_note</span>
                                         Edit
                                     </button>
                                     <form :action="'/assets/' + asset.id" method="POST"
-                                        onsubmit="return confirm('Hapus aset ini?')">
+                                        onsubmit="return confirm('Hapus aset ini?')" class="flex-none">
                                         @csrf @method('DELETE')
                                         <button
-                                            class="p-2 rounded-lg bg-slate-50 text-slate-400 hover:bg-red-50 hover:text-red-600 transition">
-                                            <span class="material-symbols-outlined text-[18px]">delete</span>
+                                            class="w-10 h-10 rounded-xl bg-white text-slate-300 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 border border-slate-200 transition-all flex items-center justify-center shadow-sm">
+                                            <span class="material-symbols-outlined text-[20px]">delete</span>
                                         </button>
                                     </form>
                                 </div>
@@ -159,17 +374,24 @@
 
                 {{-- EMPTY STATE --}}
                 <template x-if="filteredAssets.length === 0">
-                    <div class="bg-slate-50 border-2 border-dashed border-slate-200 rounded-3xl p-20 text-center">
+                    <div
+                        class="bg-white rounded-[3rem] p-24 text-center shadow-xl shadow-slate-200/30 border border-slate-100 mt-8 group">
                         <div
-                            class="w-20 h-20 rounded-full bg-white shadow-sm flex items-center justify-center mx-auto mb-4 text-slate-200">
-                            <span class="material-symbols-outlined text-[40px]">inventory</span>
+                            class="w-32 h-32 rounded-[2.5rem] bg-slate-50 flex items-center justify-center mx-auto mb-8 text-slate-200 group-hover:scale-110 transition-transform duration-700">
+                            <span
+                                class="material-symbols-outlined text-6xl opacity-30 group-hover:text-blue-500 group-hover:opacity-100 transition-all duration-700">inventory</span>
                         </div>
-                        <h3 class="text-slate-800 font-bold text-lg">Belum ada aset</h3>
-                        <p class="text-slate-400 text-sm max-w-xs mx-auto mt-1">Silahkan tambahkan aset baru untuk lab
-                            ini untuk mulai melakukan pendataan.</p>
-                        @if(auth()->user()->role === 'admin' || auth()->user()->role === 'superadmin')
+                        <h3 class="text-slate-900 font-black text-2xl tracking-tighter mb-2">Belum Ada Aset Ditemukan
+                        </h3>
+                        <p
+                            class="text-slate-400 font-medium text-sm max-w-[320px] mx-auto tracking-tight mb-10 leading-relaxed">
+                            Laboratorium ini belum memiliki data inventaris yang terdaftar dalam sistem.</p>
+                        @if(auth()->user()->role === 'admin')
                             <button @click="openCreateModal()"
-                                class="mt-6 text-blue-600 font-bold text-sm hover:underline">Tambah Sekarang</button>
+                                class="inline-flex items-center gap-2 text-blue-600 font-black text-[11px] uppercase tracking-[0.2em] px-8 py-4 rounded-2xl bg-blue-50 hover:bg-blue-600 hover:text-white transition-all shadow-md active:scale-95">
+                                <span class="material-symbols-outlined text-lg">add_circle</span>
+                                Tambah Aset Pertama
+                            </button>
                         @endif
                     </div>
                 </template>
@@ -177,72 +399,128 @@
         </div>
 
         {{-- MODAL CREATE/EDIT --}}
-        <div x-show="showModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6" x-cloak>
-            {{-- Backdrop --}}
-            <div x-show="showModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0"
-                x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200"
-                x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" @click="showModal = false"
-                class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
+        <div x-show="showModal" class="fixed inset-0 z-50 overflow-y-auto" x-cloak>
+            <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                {{-- Backdrop --}}
+                <div x-show="showModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0"
+                    x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200"
+                    x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" @click="showModal = false"
+                    class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm"></div>
 
-            {{-- Modal Content --}}
-            <div x-show="showModal" x-transition:enter="ease-out duration-300"
-                x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
-                x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 scale-100"
-                x-transition:leave-end="opacity-0 scale-95"
-                class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden relative z-10">
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen"></span>
+                <div x-show="showModal" x-transition:enter="ease-out duration-500"
+                    x-transition:enter-start="opacity-0 translate-y-24 sm:translate-y-0 sm:scale-95"
+                    x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                    x-transition:leave="ease-in duration-300"
+                    x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                    x-transition:leave-end="opacity-0 translate-y-24 sm:translate-y-0 sm:scale-95"
+                    class="inline-block align-bottom bg-white rounded-[2.5rem] text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-xl sm:w-full border border-white">
 
-                <div class="p-6 border-b border-slate-100 flex justify-between items-center">
-                    <h2 class="text-xl font-bold text-slate-800" x-text="editMode ? 'Edit Aset' : ('Tambah Aset Baru ' + (selectedLab ? 'ke ' + selectedLab.name : ''))">
-                    </h2>
-                    <button @click="showModal = false" class="text-slate-400 hover:text-slate-600 transition">
-                        <span class="material-symbols-outlined">close</span>
-                    </button>
+                    <form :action="editMode ? '/assets/' + formData.id : '{{ route('assets.store') }}'" method="POST"
+                        class="p-8 sm:p-10">
+                        @csrf
+                        <template x-if="editMode">
+                            <input type="hidden" name="_method" value="PUT">
+                        </template>
+
+                        <div class="mb-10 flex items-center justify-between">
+                            <div>
+                                <h2 class="text-3xl font-black text-slate-900 tracking-tighter"
+                                    x-text="editMode ? 'Edit Aset' : 'Tambah Aset'"></h2>
+                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1"
+                                    x-text="selectedLab ? 'Ke: ' + selectedLab.name : ''"></p>
+                            </div>
+                            <div
+                                class="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shadow-inner">
+                                <span class="material-symbols-outlined text-3xl"
+                                    x-text="editMode ? 'edit_square' : 'add_box'"></span>
+                            </div>
+                        </div>
+
+                        <input type="hidden" name="lab_id" x-model="formData.lab_id">
+
+                        <div class="space-y-8">
+                            <div>
+                                <label
+                                    class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">Nama
+                                    Aset</label>
+                                <div class="relative group">
+                                    <span
+                                        class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors">inventory_2</span>
+                                    <input type="text" name="nama" x-model="formData.nama" required
+                                        placeholder="Contoh: Monitor LG 24 Inch"
+                                        class="w-full bg-slate-50 border-none rounded-2xl py-4 pl-12 pr-4 text-slate-700 font-bold placeholder:text-slate-300 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-sm">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label
+                                    class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">Kategori
+                                    (Opsional)</label>
+                                <div class="relative group">
+                                    <span
+                                        class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors">category</span>
+                                    <input type="text" name="kategori" x-model="formData.kategori"
+                                        placeholder="Contoh: Computer, Monitor, dll"
+                                        class="w-full bg-slate-50 border-none rounded-2xl py-4 pl-12 pr-4 text-slate-700 font-bold placeholder:text-slate-300 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-sm">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-6">
+                                <div>
+                                    <label
+                                        class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">Kode
+                                        Aset (Opsional)</label>
+                                    <div class="relative group">
+                                        <span
+                                            class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors">qr_code</span>
+                                        <input type="text" name="kode_aset" x-model="formData.kode_aset"
+                                            placeholder="AST-XXX"
+                                            class="w-full bg-slate-50 border-none rounded-2xl py-4 pl-12 pr-4 text-slate-700 font-bold placeholder:text-slate-300 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-sm">
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label
+                                        class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">Total
+                                        Unit</label>
+                                    <div class="relative group">
+                                        <span
+                                            class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors">inventory</span>
+                                        <input type="number" name="jumlah" x-model="formData.jumlah" required min="1"
+                                            class="w-full bg-slate-50 border-none rounded-2xl py-4 pl-12 pr-4 text-slate-700 font-bold focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-sm">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label
+                                    class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">Dalam
+                                    Maintenance</label>
+                                <div class="relative group">
+                                    <span
+                                        class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors">engineering</span>
+                                    <input type="number" name="maintenance_count" x-model="formData.maintenance_count"
+                                        required min="0"
+                                        class="w-full bg-slate-50 border-none rounded-2xl py-4 pl-12 pr-4 text-slate-700 font-bold focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-sm">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-12 flex gap-4">
+                            <button type="button" @click="showModal = false"
+                                class="flex-1 px-6 py-4 rounded-2xl bg-slate-50 text-slate-400 font-black text-xs uppercase tracking-[0.2em] hover:bg-slate-100 transition-all active:scale-95">
+                                Batal
+                            </button>
+                            <button type="submit"
+                                class="flex-[2] px-6 py-4 rounded-2xl bg-blue-600 text-white font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-blue-200 hover:bg-blue-700 transition-all active:scale-95 flex items-center justify-center gap-2">
+                                <span class="material-symbols-outlined text-lg"
+                                    x-text="editMode ? 'save' : 'add_circle'"></span>
+                                <span x-text="editMode ? 'Simpan Perubahan' : 'Tambahkan Aset'"></span>
+                            </button>
+                        </div>
+                    </form>
                 </div>
-
-                <form :action="editMode ? '/assets/' + formData.id : '{{ route('assets.store') }}'" method="POST"
-                    class="p-6 space-y-5">
-                    @csrf
-                    <template x-if="editMode">
-                        <input type="hidden" name="_method" value="PUT">
-                    </template>
-
-                    <input type="hidden" name="lab_id" x-model="formData.lab_id">
-
-                    <div>
-                        <label class="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1.5">Nama
-                            Aset</label>
-                        <input type="text" name="nama" x-model="formData.nama" required
-                            class="w-full bg-slate-50 border-none rounded-2xl px-4 py-3 text-slate-800 font-semibold focus:ring-2 focus:ring-blue-500 transition-all placeholder:text-slate-300"
-                            placeholder="Contoh: Monitor LG 24 Inch">
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1.5">Kode
-                            Aset (Opsional)</label>
-                        <input type="text" name="kode_aset" x-model="formData.kode_aset"
-                            class="w-full bg-slate-50 border-none rounded-2xl px-4 py-3 text-slate-800 font-semibold focus:ring-2 focus:ring-blue-500 transition-all placeholder:text-slate-300"
-                            placeholder="Contoh: AST-001">
-                    </div>
-
-                    <div>
-                        <label
-                            class="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1.5">Jumlah</label>
-                        <input type="number" name="jumlah" x-model="formData.jumlah" required min="1"
-                            class="w-full bg-slate-50 border-none rounded-2xl px-4 py-3 text-slate-800 font-semibold focus:ring-2 focus:ring-blue-500 transition-all placeholder:text-slate-300">
-                    </div>
-
-                    <div class="pt-4 flex gap-3">
-                        <button type="button" @click="showModal = false"
-                            class="flex-1 bg-slate-100 text-slate-600 font-bold py-3 rounded-2xl hover:bg-slate-200 transition active:scale-95">
-                            Batal
-                        </button>
-                        <button type="submit"
-                            class="flex-1 bg-blue-600 text-white font-bold py-3 rounded-2xl shadow-lg shadow-blue-200 hover:bg-blue-700 transition active:scale-95 flex items-center justify-center">
-                            <span class="material-symbols-outlined mr-2 text-[20px]">save</span>
-                            <span x-text="editMode ? 'Simpan Perubahan' : 'Tambahkan Aset'"></span>
-                        </button>
-                    </div>
-                </form>
             </div>
         </div>
 

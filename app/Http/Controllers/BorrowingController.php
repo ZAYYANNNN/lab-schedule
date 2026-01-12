@@ -14,7 +14,7 @@ class BorrowingController extends Controller
     {
         $user = auth()->user();
 
-        $borrowingsQuery = Borrowing::with(['user', 'lab', 'asset'])->latest();
+        $borrowingsQuery = Borrowing::with(['lab', 'asset'])->latest();
 
         if ($user->role !== 'superadmin') {
             $borrowingsQuery->whereHas('lab', function ($q) use ($user) {
@@ -24,27 +24,38 @@ class BorrowingController extends Controller
 
         $borrowings = $borrowingsQuery->get();
 
+        $prodis = [];
         if ($user->role === 'superadmin') {
-            $labs = Lab::with('assets')->get();
-            $users = User::all();
-        } else {
-            $labs = Lab::where('prodi_id', $user->prodi_id)->with('assets')->get();
-            $users = User::all();
+            $prodis = \App\Models\Prodi::with(['labs.assets'])->get();
         }
 
-        return view('borrowings.index', compact('borrowings', 'labs', 'users'));
+        $labs = [];
+        if ($user->role === 'admin') {
+            $labs = Lab::where('prodi_id', $user->prodi_id)->with('assets')->get();
+        } elseif ($user->role === 'superadmin') {
+            $labs = Lab::with('assets')->get();
+        }
+
+        return view('borrowings.index', compact('borrowings', 'labs', 'prodis'));
     }
 
     public function store(Request $request)
     {
+        if (!in_array(auth()->user()->role, ['admin', 'superadmin'])) {
+            abort(403, 'Akses ditolak.');
+        }
+
         $validated = $request->validate([
-            'user_id' => 'required|exists:users,id',
+            'nama_peminjam' => 'required|string|max:255',
+            'nim' => 'required|string|max:255',
             'lab_id' => 'required|exists:labs,id',
             'asset_id' => 'required|exists:aset_labs,id',
             'borrow_date' => 'required|date',
             'return_date' => 'required|date|after_or_equal:borrow_date',
             'notes' => 'nullable|string',
         ]);
+
+        $validated['user_id'] = auth()->id();
 
         Borrowing::create($validated);
 
@@ -58,8 +69,13 @@ class BorrowingController extends Controller
 
     public function update(Request $request, Borrowing $borrowing)
     {
+        if (!in_array(auth()->user()->role, ['admin', 'superadmin'])) {
+            abort(403, 'Akses ditolak.');
+        }
+
         $validated = $request->validate([
-            'user_id' => 'required|exists:users,id',
+            'nama_peminjam' => 'required|string|max:255',
+            'nim' => 'required|string|max:255',
             'lab_id' => 'required|exists:labs,id',
             'asset_id' => 'required|exists:aset_labs,id',
             'borrow_date' => 'required|date',
@@ -75,6 +91,10 @@ class BorrowingController extends Controller
 
     public function destroy(Borrowing $borrowing)
     {
+        if (!in_array(auth()->user()->role, ['admin', 'superadmin'])) {
+            abort(403, 'Akses ditolak.');
+        }
+
         $borrowing->delete();
         return back()->with('success', 'Peminjaman berhasil dihapus.');
     }

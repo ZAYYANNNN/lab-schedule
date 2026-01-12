@@ -6,6 +6,45 @@
         editMode: {{ old('_method') === 'PUT' ? 'true' : 'false' }},
         formAction: '{{ old('_method') === 'PUT' ? url('/schedules/' . old('id')) : route('schedules.store') }}',
         prodi_id: '{{ old('prodi_id') }}',
+        
+        {{-- Checkbox Logic Data --}}
+        prodiLabs: {
+            @foreach($allProdis as $prodi)
+                '{{ $prodi->id }}': [{!! $prodi->labs->pluck('id')->map(fn($id) => "'$id'")->join(',') !!}],
+            @endforeach
+        },
+        selectedLabs: [{!! implode(',', array_map(fn($id) => "'$id'", $selectedLabIds)) !!}],
+        selectedProdis: [{!! implode(',', array_map(fn($id) => "'$id'", $selectedProdiIds)) !!}],
+
+        toggleProdi(prodiId) {
+            const labs = this.prodiLabs[prodiId] || [];
+            if (this.selectedProdis.includes(prodiId)) {
+                // Check all child labs
+                labs.forEach(labId => {
+                    if (!this.selectedLabs.includes(labId)) this.selectedLabs.push(labId);
+                });
+            } else {
+                // Uncheck all child labs
+                this.selectedLabs = this.selectedLabs.filter(id => !labs.includes(id));
+            }
+            this.$nextTick(() => document.getElementById('filterForm').submit());
+        },
+
+        toggleLab(labId, prodiId) {
+            const labs = this.prodiLabs[prodiId] || [];
+            if (!this.selectedLabs.includes(labId)) {
+                // If a lab is unchecked, the prodi must be unchecked
+                this.selectedProdis = this.selectedProdis.filter(id => id != prodiId);
+            } else {
+                // If all labs are checked, the prodi should be checked
+                const allSelected = labs.every(id => this.selectedLabs.includes(id));
+                if (allSelected && !this.selectedProdis.includes(prodiId)) {
+                    this.selectedProdis.push(prodiId);
+                }
+            }
+            this.$nextTick(() => document.getElementById('filterForm').submit());
+        },
+
         formData: {
             id: '{{ old('id') }}',
             lab_id: '{{ old('lab_id') }}',
@@ -59,77 +98,78 @@
     }">
 
         @php
-        function getProdiTheme($prodi) {
-            $name = is_object($prodi) ? $prodi->name : $prodi;
-            return match($name) {
-                'Teknik Informatika' => [
-                    'bg' => 'bg-blue-50',
-                    'bgHover' => 'hover:bg-blue-100',
-                    'border' => 'border-blue-500',
-                    'borderLight' => 'border-blue-200',
-                    'text' => 'text-blue-900',
-                    'textMuted' => 'text-blue-700/70',
-                    'textBold' => 'text-blue-700',
-                    'icon' => 'text-blue-600',
-                    'tag' => 'bg-blue-100 text-blue-700'
-                ],
-                'Teknik Sipil' => [
-                    'bg' => 'bg-green-50',
-                    'bgHover' => 'hover:bg-green-100',
-                    'border' => 'border-green-500',
-                    'borderLight' => 'border-green-200',
-                    'text' => 'text-green-900',
-                    'textMuted' => 'text-green-700/70',
-                    'textBold' => 'text-green-700',
-                    'icon' => 'text-green-600',
-                    'tag' => 'bg-green-100 text-green-700'
-                ],
-                'Teknik Mesin' => [
-                    'bg' => 'bg-red-50',
-                    'bgHover' => 'hover:bg-red-100',
-                    'border' => 'border-red-500',
-                    'borderLight' => 'border-red-200',
-                    'text' => 'text-red-900',
-                    'textMuted' => 'text-red-700/70',
-                    'textBold' => 'text-red-700',
-                    'icon' => 'text-red-600',
-                    'tag' => 'bg-red-100 text-red-700'
-                ],
-                'Teknik Elektro' => [
-                    'bg' => 'bg-amber-50',
-                    'bgHover' => 'hover:bg-amber-100',
-                    'border' => 'border-amber-500',
-                    'borderLight' => 'border-amber-200',
-                    'text' => 'text-amber-900',
-                    'textMuted' => 'text-amber-700/70',
-                    'textBold' => 'text-amber-700',
-                    'icon' => 'text-amber-600',
-                    'tag' => 'bg-amber-100 text-amber-700'
-                ],
-                'Hukum' => [
-                    'bg' => 'bg-purple-50',
-                    'bgHover' => 'hover:bg-purple-100',
-                    'border' => 'border-purple-500',
-                    'borderLight' => 'border-purple-200',
-                    'text' => 'text-purple-900',
-                    'textMuted' => 'text-purple-700/70',
-                    'textBold' => 'text-purple-700',
-                    'icon' => 'text-purple-600',
-                    'tag' => 'bg-purple-100 text-purple-700'
-                ],
-                default => [
-                    'bg' => 'bg-slate-50',
-                    'bgHover' => 'hover:bg-slate-100',
-                    'border' => 'border-slate-500',
-                    'borderLight' => 'border-slate-200',
-                    'text' => 'text-slate-900',
-                    'textMuted' => 'text-slate-700/70',
-                    'textBold' => 'text-slate-700',
-                    'icon' => 'text-slate-600',
-                    'tag' => 'bg-slate-100 text-slate-700'
-                ]
-            };
-        }
+            function getProdiTheme($prodi)
+            {
+                $name = is_object($prodi) ? $prodi->name : $prodi;
+                return match ($name) {
+                    'Teknik Informatika' => [
+                        'bg' => 'bg-blue-50',
+                        'bgHover' => 'hover:bg-blue-100',
+                        'border' => 'border-blue-500',
+                        'borderLight' => 'border-blue-200',
+                        'text' => 'text-blue-900',
+                        'textMuted' => 'text-blue-700/70',
+                        'textBold' => 'text-blue-700',
+                        'icon' => 'text-blue-600',
+                        'tag' => 'bg-blue-100 text-blue-700'
+                    ],
+                    'Teknik Sipil' => [
+                        'bg' => 'bg-green-50',
+                        'bgHover' => 'hover:bg-green-100',
+                        'border' => 'border-green-500',
+                        'borderLight' => 'border-green-200',
+                        'text' => 'text-green-900',
+                        'textMuted' => 'text-green-700/70',
+                        'textBold' => 'text-green-700',
+                        'icon' => 'text-green-600',
+                        'tag' => 'bg-green-100 text-green-700'
+                    ],
+                    'Teknik Mesin' => [
+                        'bg' => 'bg-red-50',
+                        'bgHover' => 'hover:bg-red-100',
+                        'border' => 'border-red-500',
+                        'borderLight' => 'border-red-200',
+                        'text' => 'text-red-900',
+                        'textMuted' => 'text-red-700/70',
+                        'textBold' => 'text-red-700',
+                        'icon' => 'text-red-600',
+                        'tag' => 'bg-red-100 text-red-700'
+                    ],
+                    'Teknik Elektro' => [
+                        'bg' => 'bg-amber-50',
+                        'bgHover' => 'hover:bg-amber-100',
+                        'border' => 'border-amber-500',
+                        'borderLight' => 'border-amber-200',
+                        'text' => 'text-amber-900',
+                        'textMuted' => 'text-amber-700/70',
+                        'textBold' => 'text-amber-700',
+                        'icon' => 'text-amber-600',
+                        'tag' => 'bg-amber-100 text-amber-700'
+                    ],
+                    'Hukum' => [
+                        'bg' => 'bg-purple-50',
+                        'bgHover' => 'hover:bg-purple-100',
+                        'border' => 'border-purple-500',
+                        'borderLight' => 'border-purple-200',
+                        'text' => 'text-purple-900',
+                        'textMuted' => 'text-purple-700/70',
+                        'textBold' => 'text-purple-700',
+                        'icon' => 'text-purple-600',
+                        'tag' => 'bg-purple-100 text-purple-700'
+                    ],
+                    default => [
+                        'bg' => 'bg-slate-50',
+                        'bgHover' => 'hover:bg-slate-100',
+                        'border' => 'border-slate-500',
+                        'borderLight' => 'border-slate-200',
+                        'text' => 'text-slate-900',
+                        'textMuted' => 'text-slate-700/70',
+                        'textBold' => 'text-slate-700',
+                        'icon' => 'text-slate-600',
+                        'tag' => 'bg-slate-100 text-slate-700'
+                    ]
+                };
+            }
         @endphp
 
         <div class="flex justify-between items-center mb-6">
@@ -138,26 +178,6 @@
                 <p class="text-gray-500">{{ \Carbon\Carbon::parse($selectedDate)->translatedFormat('l, d F Y') }}</p>
             </div>
             <div class="flex items-center space-x-2">
-                <form action="{{ route('schedules.index') }}" method="GET" class="flex items-center space-x-2">
-                    {{-- Prodi Filter --}}
-                    @if(auth()->user()->role === 'superadmin')
-                        <select name="prodi_id" onchange="this.form.submit()" 
-                                class="border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm py-1.5">
-                            <option value="">Semua Prodi</option>
-                            @foreach($allProdis as $prodi)
-                                <option value="{{ $prodi->id }}" {{ $selectedProdi == $prodi->id ? 'selected' : '' }}>
-                                    {{ $prodi->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    @endif
-
-                    {{-- Date Filter --}}
-                    <input type="date" name="date" value="{{ $selectedDate }}" 
-                           onchange="this.form.submit()"
-                           class="border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm py-1.5">
-                </form>
-
                 <button type="button" @click="openCreateModal()"
                     class="bg-blue-600 text-white px-4 py-1.5 rounded-lg hover:bg-blue-700 transition flex items-center shadow-sm text-sm font-semibold">
                     <span class="material-symbols-outlined text-[20px] mr-2">add</span>
@@ -172,116 +192,236 @@
             </div>
         @endif
 
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-            <div class="overflow-auto scrollbar-modern" style="max-height: 800px;"> 
-                @php
-                    $labCount = count($labs);
-                    $gridCols = "80px repeat($labCount, minmax(250px, 1fr))";
-                    // 1 jam dibagi 4 slot (15 menit). Total 11 jam (07:00 - 18:00) = 44 slot + 1 header
-                    $totalSlots = 44; 
-                @endphp
+        <div class="flex flex-col lg:flex-row gap-6">
+            {{-- SIDEBAR FILTER --}}
+            <aside class="w-full lg:w-80 flex-shrink-0 space-y-6">
+                <form action="{{ route('schedules.index') }}" method="GET" id="filterForm" class="space-y-6">
+                    <input type="hidden" name="filter_submitted" value="1">
+                    {{-- CALENDAR --}}
+                    <div class="rounded-2xl bg-white border border-gray-200 shadow-sm p-2
+                        [&_.flatpickr-calendar]:w-full
+                        [&_.flatpickr-calendar]:border-0
+                        [&_.flatpickr-calendar]:shadow-none
 
-                <div class="grid relative" 
-                     style="grid-template-columns: {{ $gridCols }}; 
-                            grid-template-rows: 50px repeat({{ $totalSlots }}, 1.75rem);">
-                    
-                    {{-- 1. HEADER WAKTU (POJOK) --}}
-                    <div class="sticky top-0 left-0 z-50 bg-slate-50 border-r border-b border-gray-200 flex items-center justify-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                        Waktu
+                        /* HEADER ROW */
+                        [&_.flatpickr-months]:flex
+                        [&_.flatpickr-months]:items-center
+                        [&_.flatpickr-months]:justify-between
+                        [&_.flatpickr-months]:mb-3
+
+                        [&_.flatpickr-prev-month]:static
+                        [&_.flatpickr-next-month]:static
+                        [&_.flatpickr-prev-month]:p-1
+                        [&_.flatpickr-next-month]:p-1
+
+                        /* BULAN + TAHUN */
+                        [&_.flatpickr-current-month]:flex
+                        [&_.flatpickr-current-month]:items-center
+                        [&_.flatpickr-current-month]:gap-1
+                        [&_.flatpickr-current-month]:flex-1
+                        [&_.flatpickr-current-month]:justify-center
+
+                        [&_.cur-month]:text-base
+                        [&_.cur-month]:font-semibold
+                        [&_.cur-month]:leading-none
+                        [&_.cur-month]:text-gray-800
+
+                        [&_.cur-year]:text-base
+                        [&_.cur-year]:font-semibold
+                        [&_.cur-year]:leading-none
+                        [&_.cur-year]:text-gray-800
+                        [&_.cur-year]:bg-transparent
+                        [&_.cur-year]:border-0
+                        [&_.cur-year]:pointer-events-none
+                    ">
+
+                        <div id="inline-calendar"></div>
+                        <input type="hidden" name="date" id="dateInput" value="{{ $selectedDate }}">
                     </div>
-                    
-                    {{-- 2. HEADER NAMA LAB --}}
-                    @foreach($labs as $lab)
-                        <div class="sticky top-0 z-40 bg-slate-50/95 backdrop-blur-sm px-4 py-1 border-r border-b border-gray-200 flex flex-col justify-center">
-                            <h3 class="font-bold text-slate-800 text-sm truncate uppercase tracking-tight leading-tight">
-                                {{ $lab->name }}
-                            </h3>
-                            <p class="mt-1 text-[9px] text-blue-600 font-bold truncate opacity-80 leading-tight">
-                                {{ $lab->prodi }}
-                            </p>
+
+                    {{-- PRODI/LAB FILTERS --}}
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
+                        <h3 class="text-sm font-bold text-gray-800 mb-4 flex items-center">
+                            <span class="material-symbols-outlined text-blue-600 mr-2 text-[20px]">
+                                {{ auth()->user()->role === 'superadmin' ? 'account_tree' : 'meeting_room' }}
+                            </span>
+                            {{ auth()->user()->role === 'superadmin' ? 'Filter Prodi & Lab' : 'Filter Lab' }}
+                        </h3>
+
+                        <div class="space-y-4 max-h-[400px] overflow-y-auto pr-2 scrollbar-thin">
+                            @if(auth()->user()->role === 'superadmin')
+                                @foreach($allProdis as $prodi)
+                                    <div x-data="{ open: {{ in_array($prodi->id, $selectedProdiIds) ? 'true' : 'false' }} }" class="group">
+                                        <div class="flex items-center justify-between p-3 rounded-2xl transition hover:bg-slate-50 border border-transparent hover:border-slate-100">
+                                            <label class="flex items-center cursor-pointer flex-1">
+                                                <input type="checkbox" name="prodi_ids[]" value="{{ $prodi->id }}"
+                                                    x-model="selectedProdis" @change="toggleProdi('{{ $prodi->id }}')"
+                                                    class="w-5 h-5 rounded-lg border-slate-200 text-blue-600 focus:ring-blue-500 shadow-sm transition-all">
+                                                <span class="ml-3 text-sm font-bold text-slate-700 group-hover:text-blue-600 transition">{{ $prodi->name }}</span>
+                                            </label>
+                                            <button @click="open = !open" type="button" 
+                                                class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:bg-white hover:text-blue-600 shadow-sm transition-all border border-transparent hover:border-slate-100">
+                                                <span class="material-symbols-outlined text-lg transition-transform duration-300" 
+                                                    :class="open ? 'rotate-180' : ''">expand_more</span>
+                                            </button>
+                                        </div>
+
+                                        <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0"
+                                            class="ml-8 mt-2 space-y-2 border-l-2 border-slate-100 pl-4 py-1">
+                                            @foreach($prodi->labs as $lab)
+                                                <label class="flex items-center cursor-pointer group/lab p-1 rounded-lg hover:bg-slate-50 transition-colors">
+                                                    <input type="checkbox" name="lab_ids[]" value="{{ $lab->id }}"
+                                                        x-model="selectedLabs" @change="toggleLab('{{ $lab->id }}', '{{ $prodi->id }}')"
+                                                        class="w-4 h-4 rounded-md border-slate-200 text-blue-500 focus:ring-blue-400 shadow-sm transition-all">
+                                                    <span class="ml-2.5 text-[13px] font-medium text-slate-500 group-hover/lab:text-blue-500 transition">{{ $lab->name }}</span>
+                                                </label>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endforeach
+                            @else
+                                <div class="space-y-2">
+                                    @foreach($allLabs as $lab)
+                                        <label class="flex items-center cursor-pointer group p-2.5 hover:bg-blue-50/50 rounded-2xl border border-transparent hover:border-blue-100 transition-all duration-300">
+                                            <input type="checkbox" name="lab_ids[]" value="{{ $lab->id }}"
+                                                x-model="selectedLabs" @change="document.getElementById('filterForm').submit()"
+                                                class="w-5 h-5 rounded-lg border-slate-200 text-blue-600 focus:ring-blue-500 shadow-sm transition-all">
+                                            <span class="ml-3 text-sm font-bold text-slate-700 group-hover:text-blue-600 transition">{{ $lab->name }}</span>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            @endif
                         </div>
-                    @endforeach
 
+                        @if(!empty($selectedProdiIds) || !empty($selectedLabIds))
+                            <div class="mt-8 pt-6 border-t border-slate-100">
+                                <a href="{{ route('schedules.index', ['date' => $selectedDate]) }}"
+                                    class="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-slate-50 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition-all font-black text-[10px] uppercase tracking-[0.2em] border border-slate-100 hover:border-rose-100">
+                                    <span class="material-symbols-outlined text-[18px]">restart_alt</span>
+                                    Reset Semua Filter
+                                </a>
+                            </div>
+                        @endif
+                    </div>
+                </form>
+            </aside>
 
-                    {{-- 3. BACKGROUND GRID & LABEL JAM --}}
-                    @for($i = 0; $i < 11; $i++)
-                        @php $currentHour = 7 + $i; @endphp
-                        {{-- Label Jam --}}
-                        <div class="sticky left-0 z-30 bg-slate-50 border-r border-gray-200 flex items-start justify-center pt-1 text-[11px] font-semibold text-slate-500"
-                             style="grid-row: {{ ($i * 4) + 2 }} / span 4;">
-                            {{ sprintf('%02d:00', $currentHour) }}
-                        </div>
-
-                        {{-- Garis Horizontal (Tiap Jam) --}}
-                        <div class="col-start-2 col-end-[-1] border-t border-slate-300"
-                             style="grid-row: {{ ($i * 4) + 2 }};"></div>
-                        {{-- Garis halus per 30 menit --}}
-                        <div class="col-start-2 col-end-[-1] border-t border-slate-200 border-dashed"
-                             style="grid-row: {{ ($i * 4) + 4 }};"></div>
-                    @endfor
-
-                    {{-- 4. ITEMS JADWAL --}}
-                    @foreach($schedules as $schedule)
+            {{-- MAIN BOARD --}}
+            <div class="flex-1 min-w-0 min-h-[700px]">
+                <div class="bg-white rounded-[2.5rem] shadow-2xl shadow-slate-200/40 border border-slate-100 overflow-hidden ring-1 ring-slate-100/50">
+                    <div class="overflow-auto scrollbar-none" style="max-height: 850px;">
                         @php
-                            $labIndex = $labs->search(fn($l) => $l->id === $schedule->lab_id);
-                            if ($labIndex === false) continue;
-
-                            $start = \Carbon\Carbon::parse($schedule->start_time);
-                            $end = \Carbon\Carbon::parse($schedule->end_time);
-                            
-                            // Hitung posisi berdasarkan slot 15 menit
-                            $startSlot = (($start->hour - 7) * 4) + floor($start->minute / 15);
-                            $endSlot = (($end->hour - 7) * 4) + floor($end->minute / 15);
-                            
-                            $startRow = $startSlot + 2; 
-                            $span = max(1, $endSlot - $startSlot);
-                            $colIndex = $labIndex + 2;
+                            $labCount = count($labs);
+                            $gridCols = "100px repeat(" . max(1, $labCount) . ", minmax(280px, 1fr))";
+                            $totalSlots = 44; 
                         @endphp
 
-                        <div class="z-10 px-1.5 py-0.5"
-                            style="grid-column: {{ $colIndex }}; grid-row: {{ $startRow }} / span {{ $span }};">
-                                                        @php
-                                $lab = $labs[$labIndex];
-                                $theme = getProdiTheme($lab->prodi);
-                            @endphp
+                        <div class="grid relative bg-white" style="grid-template-columns: {{ $gridCols }}; 
+                                    grid-template-rows: 70px repeat({{ $totalSlots }}, 1.25rem);">
 
-                            <div @click="openDetailModal({{ $schedule->toJson() }})"
-                                class="
-                                    h-full w-full rounded-lg
-                                    border-l-4 {{ $theme['border'] }}
-                                    {{ $theme['bg'] }}
-                                    p-2 flex flex-col justify-between
-                                    shadow-sm ring-1 ring-black/5
-                                    {{ $theme['bgHover'] }} hover:shadow-md
-                                    cursor-pointer transition
-                                ">
-
-                                <div class="overflow-hidden">
-                                    <h4 class="font-bold text-[11px] leading-tight truncate uppercase tracking-tight {{ $theme['text'] }}">
-                                        {{ $schedule->activity }}
-                                    </h4>
-
-                                    <div class="flex items-center mt-1 text-[9px] font-medium {{ $theme['textMuted'] }}">
-                                        <span class="material-symbols-outlined text-[10px] mr-1">person</span>
-                                        {{ $schedule->creator->name ?? 'Admin' }}
-                                    </div>
-                                </div>
-
-                                <div class="mt-1 pt-1 border-t {{ $theme['borderLight'] }} text-[9px] font-bold {{ $theme['textBold'] }}">
-                                    <span class="material-symbols-outlined text-[10px] mr-1">schedule</span>
-                                    {{ $start->format('H:i') }} - {{ $end->format('H:i') }}
-                                </div>
+                            {{-- 1. HEADER WAKTU (POJOK) --}}
+                            <div class="sticky top-0 left-0 z-[50] bg-slate-50/80 border-r border-b border-white-800 flex items-center justify-center text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] shadow-lg">
+                                Waktu
                             </div>
 
-                        </div>
-                    @endforeach
+                            {{-- 2. HEADER NAMA LAB --}}
+                            @if($labCount > 0)
+                                @foreach($labs as $lab)
+                                    <div class="sticky top-0 z-[40] bg-white/95 backdrop-blur-xl px-8 py-3 border-r border-b border-slate-100 flex flex-col justify-center shadow-sm">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                                            <h3 class="font-black text-slate-800 text-[13px] uppercase tracking-tight truncate">
+                                                {{ $lab->name }}
+                                            </h3>
+                                        </div>
+                                        <p class="text-[9px] text-blue-500 font-bold uppercase tracking-widest opacity-60 truncate">
+                                            {{ is_object($lab->prodi) ? $lab->prodi->name : ($lab->prodi ?? '-') }}
+                                        </p>
+                                    </div>
+                                @endforeach
+                            @else
+                                <div class="sticky top-0 z-[40] bg-slate-50/50 backdrop-blur-sm border-b border-slate-100 flex items-center justify-center text-slate-400 p-12 text-center col-start-2">
+                                    <div class="flex flex-col items-center">
+                                        <div class="w-20 h-20 rounded-3xl bg-white shadow-xl flex items-center justify-center text-slate-200 mb-6">
+                                            <span class="material-symbols-outlined text-5xl">inventory_2</span>
+                                        </div>
+                                        <h4 class="text-slate-800 font-black text-lg mb-2 leading-none uppercase tracking-widest">Tidak Ada Data</h4>
+                                        <p class="text-sm font-medium text-slate-400 max-w-[250px]">Pilih Program Studi atau Lab untuk melihat timeline kegiatan.</p>
+                                    </div>
+                                </div>
+                            @endif
 
-                    {{-- Garis Vertikal Pembatas Lab --}}
-                    @foreach($labs as $index => $lab)
-                        <div class="pointer-events-none border-r border-gray-200"
-                             style="grid-column: {{ $index + 2 }}; grid-row: 2 / span {{ $totalSlots + 1 }};">
+                            {{-- 3. LABEL JAM & GRID LINES --}}
+                            @for($i = 0; $i < 11; $i++)
+                                @php $currentHour = 7 + $i; @endphp
+                                <div class="sticky left-0 z-[30] bg-slate-50/80 backdrop-blur-sm border-r border-slate-100 flex items-start justify-center pt-2 text-[11px] font-black text-slate-400 shadow-sm"
+                                    style="grid-row: {{ ($i * 4) + 2 }} / span 4;">
+                                    {{ sprintf('%02d:00', $currentHour) }}
+                                </div>
+
+                                {{-- Horizontal Lines --}}
+                                <div class="col-start-2 col-end-[-1] border-b border-slate-100" style="grid-row: {{ ($i * 4) + 2 }};"></div>
+                                <div class="col-start-2 col-end-[-1] border-b border-slate-50 border-dashed" style="grid-row: {{ ($i * 4) + 4 }};"></div>
+                            @endfor
+
+                            {{-- 4. ITEMS JADWAL --}}
+                            @if($labCount > 0)
+                                @foreach($schedules as $schedule)
+                                    @php
+                                        $labIndex = $labs->search(fn($l) => $l->id === $schedule->lab_id);
+                                        if ($labIndex === false) continue;
+
+                                        $start = \Carbon\Carbon::parse($schedule->start_time);
+                                        $end = \Carbon\Carbon::parse($schedule->end_time);
+                                        $startSlot = (($start->hour - 7) * 4) + floor($start->minute / 15);
+                                        $endSlot = (($end->hour - 7) * 4) + floor($end->minute / 15);
+                                        $startRow = $startSlot + 2;
+                                        $span = max(1, $endSlot - $startSlot);
+                                        $colIndex = $labIndex + 2;
+                                        
+                                        $lab = $labs[$labIndex];
+                                        $theme = getProdiTheme($lab->prodi);
+                                    @endphp
+
+                                    <div class="z-10 px-2 py-1" style="grid-column: {{ $colIndex }}; grid-row: {{ $startRow }} / span {{ $span }};">
+                                        <div @click="openDetailModal({{ $schedule->toJson() }})"
+                                            class="group h-full w-full rounded-2xl border-l-[6px] {{ $theme['border'] }} {{ $theme['bg'] }} p-4 flex flex-col justify-between shadow-xl shadow-slate-200/20 ring-1 ring-black/5 hover:scale-[1.02] transform transition-all duration-300 cursor-pointer overflow-hidden relative">
+                                            {{-- Decorative Glow inside item --}}
+                                            <div class="absolute -right-4 -top-4 w-12 h-12 rounded-full opacity-10 blur-xl {{ $theme['icon'] }}"></div>
+                                            
+                                            <div class="relative z-10">
+                                                <h4 class="font-black text-[12px] leading-tight mb-2 tracking-tight uppercase {{ $theme['textBold'] }} line-clamp-2">
+                                                    {{ $schedule->activity }}
+                                                </h4>
+                                                <div class="flex items-center text-[10px] font-bold {{ $theme['textMuted'] }} opacity-80 mb-3 uppercase tracking-widest leading-none">
+                                                    <span class="material-symbols-outlined text-[14px] mr-1.5">school</span>
+                                                    {{ $schedule->creator->name ?? 'Dosen Pengampu' }}
+                                                </div>
+                                            </div>
+                                            <div class="flex items-center justify-between border-t {{ $theme['borderLight'] }} pt-3 mt-auto relative z-10">
+                                                <div class="flex items-center text-[10px] font-black {{ $theme['textBold'] }} opacity-90 uppercase tracking-[0.1em]">
+                                                    <span class="material-symbols-outlined text-[14px] mr-1.5">schedule</span>
+                                                    {{ $start->format('H:i') }} - {{ $end->format('H:i') }}
+                                                </div>
+                                                <div class="w-6 h-6 rounded-lg bg-white/50 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <span class="material-symbols-outlined text-sm {{ $theme['icon'] }}">visibility</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            @endif
+
+                            {{-- Vertical Grid Lines --}}
+                            @if($labCount > 0)
+                                @foreach($labs as $index => $lab)
+                                    <div class="pointer-events-none border-r border-slate-100/80"
+                                        style="grid-column: {{ $index + 2 }}; grid-row: 2 / span {{ $totalSlots + 1 }};">
+                                    </div>
+                                @endforeach
+                            @endif
                         </div>
-                    @endforeach
+                    </div>
                 </div>
             </div>
         </div>
@@ -292,80 +432,93 @@
                     x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200"
                     x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
                     class="fixed inset-0 transition-opacity" @click="showDetail = false">
-                    <div class="absolute inset-0 bg-gray-500/75 backdrop-blur-sm"></div>
+                    <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-md"></div>
                 </div>
 
                 <span class="hidden sm:inline-block sm:align-middle sm:h-screen"></span>
-                <div x-show="showDetail" x-transition:enter="ease-out duration-300"
-                    x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                <div x-show="showDetail" x-transition:enter="ease-out duration-500"
+                    x-transition:enter-start="opacity-0 translate-y-24 sm:translate-y-0 sm:scale-90"
                     x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
-                    x-transition:leave="ease-in duration-200"
+                    x-transition:leave="ease-in duration-300"
                     x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
-                    x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                    class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full">
-                    
+                    x-transition:leave-end="opacity-0 translate-y-24 sm:translate-y-0 sm:scale-95"
+                    class="inline-block align-bottom bg-white rounded-[2.5rem] text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-white/20">
+
                     <template x-if="selectedSchedule">
-                        <div class="p-6">
-                            @php
-                                // We use a JS function for dynamic color in Alpine, but we can set up the theme classes here
-                            @endphp
-                            <div class="flex justify-between items-start mb-6">
-                                <div :class="`p-3 rounded-xl ${getTheme(selectedSchedule.lab?.prodi).bg}`">
-                                    <span :class="`material-symbols-outlined ${getTheme(selectedSchedule.lab?.prodi).icon}`">event_note</span>
+                        <div class="p-8 sm:p-10 relative overflow-hidden">
+                            {{-- Decorative Background --}}
+                            <div class="absolute top-0 right-0 w-32 h-32 bg-blue-50/50 rounded-full -mr-16 -mt-16 blur-2xl"></div>
+
+                            <div class="flex justify-between items-start mb-8 relative z-10">
+                                <div :class="`w-16 h-16 rounded-2xl flex items-center justify-center shadow-inner ${getTheme(selectedSchedule.lab?.prodi).bg}`">
+                                    <span :class="`material-symbols-outlined text-3xl ${getTheme(selectedSchedule.lab?.prodi).icon}`">event_note</span>
                                 </div>
-                                <button @click="showDetail = false" class="text-gray-400 hover:text-gray-600 transition">
-                                    <span class="material-symbols-outlined">close</span>
+                                <button @click="showDetail = false"
+                                    class="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-all flex items-center justify-center group">
+                                    <span class="material-symbols-outlined transition-transform group-hover:rotate-90">close</span>
                                 </button>
                             </div>
 
-                            <div class="mb-6">
-                                <h3 class="text-xl font-bold text-gray-900 mb-1" x-text="selectedSchedule.activity"></h3>
-                                <p class="text-sm text-gray-500" x-text="'Dibuat oleh: ' + (selectedSchedule.creator?.name || 'Admin')"></p>
-                                <template x-if="selectedSchedule.lab?.prodi">
-                                    <span :class="`inline-block mt-2 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${getTheme(selectedSchedule.lab?.prodi).bg100} ${getTheme(selectedSchedule.lab?.prodi).text700}`" 
-                                          x-text="(typeof selectedSchedule.lab.prodi === 'object') ? selectedSchedule.lab.prodi.name : selectedSchedule.lab.prodi"></span>
-                                </template>
-                            </div>
-
-                            <div class="space-y-4 bg-gray-50 rounded-2xl p-4 mb-6">
-                                <div class="flex items-center space-x-3 text-gray-700">
-                                    <span class="material-symbols-outlined text-gray-400">meeting_room</span>
-                                    <div>
-                                        <p class="text-[10px] uppercase font-bold text-gray-400 leading-none mb-1">Ruangan Lab</p>
-                                        <p class="text-sm font-semibold" x-text="selectedSchedule.lab?.name"></p>
-                                    </div>
-                                </div>
-                                <div class="flex items-center space-x-3 text-gray-700">
-                                    <span class="material-symbols-outlined text-gray-400">calendar_today</span>
-                                    <div>
-                                        <p class="text-[10px] uppercase font-bold text-gray-400 leading-none mb-1">Tanggal</p>
-                                        <p class="text-sm font-semibold" x-text="new Date(selectedSchedule.date).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })"></p>
-                                    </div>
-                                </div>
-                                <div class="flex items-center space-x-3 text-gray-700">
-                                    <span class="material-symbols-outlined text-gray-400">schedule</span>
-                                    <div>
-                                        <p class="text-[10px] uppercase font-bold text-gray-400 leading-none mb-1">Waktu</p>
-                                        <p class="text-sm font-semibold" x-text="selectedSchedule.start_time.substring(0,5) + ' - ' + selectedSchedule.end_time.substring(0,5)"></p>
-                                    </div>
+                            <div class="mb-8 relative z-10">
+                                <h3 class="text-3xl font-black text-slate-900 leading-tight mb-2 tracking-tighter" x-text="selectedSchedule.activity"></h3>
+                                <div class="flex items-center gap-3">
+                                    <p class="text-xs font-bold text-slate-400" x-text="'Oleh: ' + (selectedSchedule.creator?.name || 'Sistem')"></p>
+                                    <span class="w-1 h-1 rounded-full bg-slate-200"></span>
+                                    <template x-if="selectedSchedule.lab?.prodi">
+                                        <span :class="`inline-block px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-[0.15em] ${getTheme(selectedSchedule.lab?.prodi).bg100} ${getTheme(selectedSchedule.lab?.prodi).text700} border border-white`"
+                                            x-text="(typeof selectedSchedule.lab.prodi === 'object') ? selectedSchedule.lab.prodi.name : selectedSchedule.lab.prodi"></span>
+                                    </template>
                                 </div>
                             </div>
 
-                            <div class="flex space-x-3">
-                                <button @click="openEditModalFromDetail()" 
-                                    class="flex-1 bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-xl hover:bg-gray-50 transition font-bold text-sm flex items-center justify-center space-x-2">
-                                    <span class="material-symbols-outlined text-[18px]">edit</span>
+                            <div class="space-y-4 bg-slate-50/50 rounded-[2rem] p-6 border border-slate-100 mb-8 relative z-10">
+                                <div class="flex items-center gap-4 text-slate-700">
+                                    <div class="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center text-blue-500 border border-slate-100">
+                                        <span class="material-symbols-outlined text-[20px]">meeting_room</span>
+                                    </div>
+                                    <div>
+                                        <p class="text-[9px] uppercase font-black text-slate-400 tracking-widest mb-0.5">Laboratorium</p>
+                                        <p class="text-[14px] font-black tracking-tight" x-text="selectedSchedule.lab?.name"></p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-4 text-slate-700">
+                                    <div class="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center text-indigo-500 border border-slate-100">
+                                        <span class="material-symbols-outlined text-[20px]">calendar_today</span>
+                                    </div>
+                                    <div>
+                                        <p class="text-[9px] uppercase font-black text-slate-400 tracking-widest mb-0.5">Hari & Tanggal</p>
+                                        <p class="text-[14px] font-black tracking-tight"
+                                            x-text="new Date(selectedSchedule.date).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })">
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-4 text-slate-700">
+                                    <div class="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center text-emerald-500 border border-slate-100">
+                                        <span class="material-symbols-outlined text-[20px]">schedule</span>
+                                    </div>
+                                    <div>
+                                        <p class="text-[9px] uppercase font-black text-slate-400 tracking-widest mb-0.5">Alokasi Waktu</p>
+                                        <p class="text-[14px] font-black tracking-tight"
+                                            x-text="selectedSchedule.start_time.substring(0,5) + ' - ' + selectedSchedule.end_time.substring(0,5)">
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex gap-4 relative z-10">
+                                <button @click="openEditModalFromDetail()"
+                                    class="flex-1 bg-slate-900 text-white px-6 py-4 rounded-2xl hover:bg-blue-600 shadow-xl shadow-slate-900/10 hover:shadow-blue-200 transition-all font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-3 active:scale-95">
+                                    <span class="material-symbols-outlined text-lg">edit</span>
                                     <span>Edit</span>
                                 </button>
-                                
-                                <form :action="'{{ url('/schedules') }}/' + selectedSchedule.id" method="POST" class="flex-1"
-                                    onsubmit="return confirm('Hapus jadwal ini?');">
+
+                                <form :action="'{{ url('/schedules') }}/' + selectedSchedule.id" method="POST"
+                                    class="contents" onsubmit="return confirm('Hapus jadwal ini?');">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" 
-                                        class="w-full bg-red-50 text-red-600 px-4 py-2.5 rounded-xl hover:bg-red-100 transition font-bold text-sm flex items-center justify-center space-x-2">
-                                        <span class="material-symbols-outlined text-[18px]">delete</span>
-                                        <span>Hapus</span>
+                                    <button type="submit"
+                                        class="w-14 h-14 bg-slate-50 text-slate-300 px-4 py-2.5 rounded-2xl hover:bg-rose-50 hover:text-rose-600 transition-all flex items-center justify-center border border-slate-100 hover:border-rose-100 active:scale-95">
+                                        <span class="material-symbols-outlined text-2xl font-black">delete</span>
                                     </button>
                                 </form>
                             </div>
@@ -376,25 +529,25 @@
         </div>
 
         {{-- Form Modal (Create/Edit) --}}
-        <div x-show="showModal" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;" x-cloak>
+        <div x-show="showModal" class="fixed inset-0 z-[60] overflow-y-auto" style="display: none;" x-cloak>
             <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
                 <div x-show="showModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0"
                     x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200"
                     x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
                     class="fixed inset-0 transition-opacity" @click="showModal = false">
-                    <div class="absolute inset-0 bg-gray-500/75 backdrop-blur-sm"></div>
+                    <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"></div>
                 </div>
 
                 <span class="hidden sm:inline-block sm:align-middle sm:h-screen"></span>
-                <div x-show="showModal" x-transition:enter="ease-out duration-300"
-                    x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                <div x-show="showModal" x-transition:enter="ease-out duration-500"
+                    x-transition:enter-start="opacity-0 translate-y-24 sm:translate-y-0 sm:scale-95"
                     x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
-                    x-transition:leave="ease-in duration-200"
+                    x-transition:leave="ease-in duration-300"
                     x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
-                    x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                    class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                    
-                    <form :action="formAction" method="POST">
+                    x-transition:leave-end="opacity-0 translate-y-24 sm:translate-y-0 sm:scale-95"
+                    class="inline-block align-bottom bg-white rounded-[2.5rem] text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-xl sm:w-full border border-white">
+
+                    <form :action="formAction" method="POST" class="p-8 sm:p-10">
                         @csrf
                         <template x-if="editMode">
                             <div>
@@ -403,78 +556,95 @@
                             </div>
                         </template>
 
-                        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                            <h3 class="text-lg leading-6 font-bold text-gray-900 mb-4" x-text="editMode ? 'Edit Jadwal' : 'Tambah Jadwal Baru'"></h3>
-                            
-                            <div class="space-y-4">
-                                <div class="flex space-x-4">
-                                    {{-- PRODI --}}
-                                    <div class="w-1/2">
-                                        <label class="block text-gray-700 text-sm font-bold mb-2">Prodi</label>
-                                        <select name="prodi_id" x-model="prodi_id" class="shadow border rounded w-full py-2 px-3 text-sm" required>
-                                            <option value="">-- Pilih Prodi --</option>
+                        <div class="mb-10 flex items-center justify-between">
+                            <div>
+                                <h3 class="text-3xl font-black text-slate-900 tracking-tighter"
+                                    x-text="editMode ? 'Edit Jadwal' : 'Tambah Jadwal'"></h3>
+                                <p class="text-sm font-medium text-slate-400 mt-1 uppercase tracking-widest text-[10px]">Lengkapi data formulir berikut.</p>
+                            </div>
+                            <div class="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shadow-inner">
+                                <span class="material-symbols-outlined text-3xl" x-text="editMode ? 'edit_calendar' : 'add_task'"></span>
+                            </div>
+                        </div>
+
+                        <div class="space-y-8">
+                            <div class="grid grid-cols-2 gap-6">
+                                {{-- PRODI --}}
+                                <div>
+                                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">Program Studi</label>
+                                    <div class="relative group">
+                                        <select name="prodi_id" x-model="prodi_id"
+                                            class="w-full bg-slate-50 border-none rounded-2xl py-4 px-4 text-slate-700 font-bold focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all appearance-none cursor-pointer" required>
+                                            <option value="">-- Pilih --</option>
                                             @foreach($allProdis as $prodi)
                                                 <option value="{{ $prodi->id }}">{{ $prodi->name }}</option>
                                             @endforeach
                                         </select>
-                                        @error('prodi_id') <p class="text-red-500 text-[10px] mt-1 italic">{{ $message }}</p> @enderror
+                                        <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none">expand_more</span>
                                     </div>
+                                    @error('prodi_id') <p class="text-rose-500 text-[10px] mt-2 font-bold ml-1 tracking-tight">{{ $message }}</p> @enderror
+                                </div>
 
-                                    {{-- LAB --}}
-                                    <div class="w-1/2">
-                                        <label class="block text-gray-700 text-sm font-bold mb-2">Lab</label>
-                                        <select name="lab_id" x-model="formData.lab_id" 
-                                                class="shadow border rounded w-full py-2 px-3 text-sm" 
-                                                :disabled="!prodi_id" required>
-                                            <option value="">-- Pilih Lab --</option>
+                                {{-- LAB --}}
+                                <div>
+                                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">Laboratorium</label>
+                                    <div class="relative group">
+                                        <select name="lab_id" x-model="formData.lab_id"
+                                            class="w-full bg-slate-50 border-none rounded-2xl py-4 px-4 text-slate-700 font-bold focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all appearance-none cursor-pointer" :disabled="!prodi_id" required>
+                                            <option value="">-- Pilih --</option>
                                             @foreach($allLabs as $lab)
                                                 <template x-if="prodi_id == '{{ $lab->prodi_id }}'">
                                                     <option value="{{ $lab->id }}">{{ $lab->name }}</option>
                                                 </template>
                                             @endforeach
                                         </select>
-                                        @error('lab_id') <p class="text-red-500 text-[10px] mt-1 italic">{{ $message }}</p> @enderror
+                                        <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none">expand_more</span>
                                     </div>
+                                    @error('lab_id') <p class="text-rose-500 text-[10px] mt-2 font-bold ml-1 tracking-tight">{{ $message }}</p> @enderror
                                 </div>
+                            </div>
 
+                            <div>
+                                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">Nama Kegiatan / Mata Kuliah</label>
+                                <div class="relative group">
+                                    <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors">description</span>
+                                    <input type="text" name="activity" x-model="formData.activity" placeholder="Contoh: Pemrograman Web"
+                                        class="w-full bg-slate-50 border-none rounded-2xl py-4 pl-12 pr-4 text-slate-700 font-bold placeholder:text-slate-300 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all" required>
+                                </div>
+                                @error('activity') <p class="text-rose-500 text-[10px] mt-2 font-bold ml-1 tracking-tight">{{ $message }}</p> @enderror
+                            </div>
+
+                            <div class="grid grid-cols-3 gap-4">
                                 <div>
-                                    <label class="block text-gray-700 text-sm font-bold mb-2">Activity</label>
-                                    <input type="text" name="activity" x-model="formData.activity" 
-                                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline text-sm" required>
-                                    @error('activity') <p class="text-red-500 text-[10px] mt-1 italic">{{ $message }}</p> @enderror
+                                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">Tanggal</label>
+                                    <input type="date" name="date" x-model="formData.date"
+                                        class="w-full bg-slate-50 border-none rounded-2xl py-4 px-4 text-slate-700 font-bold focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-sm" required>
+                                    @error('date') <p class="text-rose-500 text-[10px] mt-2 font-bold ml-1 tracking-tight">{{ $message }}</p> @enderror
                                 </div>
-
-                                <div class="flex space-x-4">
-                                    <div class="w-full">
-                                        <label class="block text-gray-700 text-sm font-bold mb-2">Date</label>
-                                        <input type="date" name="date" x-model="formData.date" 
-                                               class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline text-sm" required>
-                                        @error('date') <p class="text-red-500 text-[10px] mt-1 italic">{{ $message }}</p> @enderror
-                                    </div>
+                                <div>
+                                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">Jam Mulai</label>
+                                    <input type="time" name="start_time" x-model="formData.start_time"
+                                        class="w-full bg-slate-50 border-none rounded-2xl py-4 px-4 text-slate-700 font-bold focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-sm" required>
+                                    @error('start_time') <p class="text-rose-500 text-[10px] mt-2 font-bold ml-1 tracking-tight">{{ $message }}</p> @enderror
                                 </div>
-
-                                <div class="flex space-x-4">
-                                    <div class="w-1/2">
-                                        <label class="block text-gray-700 text-sm font-bold mb-2">Start Time</label>
-                                        <input type="time" name="start_time" x-model="formData.start_time" 
-                                               class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline text-sm" required>
-                                        @error('start_time') <p class="text-red-500 text-[10px] mt-1 italic">{{ $message }}</p> @enderror
-                                    </div>
-                                    <div class="w-1/2">
-                                        <label class="block text-gray-700 text-sm font-bold mb-2">End Time</label>
-                                        <input type="time" name="end_time" x-model="formData.end_time" 
-                                               class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline text-sm" required>
-                                        @error('end_time') <p class="text-red-500 text-[10px] mt-1 italic">{{ $message }}</p> @enderror
-                                    </div>
+                                <div>
+                                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">Jam Selesai</label>
+                                    <input type="time" name="end_time" x-model="formData.end_time"
+                                        class="w-full bg-slate-50 border-none rounded-2xl py-4 px-4 text-slate-700 font-bold focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-sm" required>
+                                    @error('end_time') <p class="text-rose-500 text-[10px] mt-2 font-bold ml-1 tracking-tight">{{ $message }}</p> @enderror
                                 </div>
                             </div>
                         </div>
-                        <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                            <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">
-                                Simpan
-                            </button>
-                            <button type="button" @click="showModal = false" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+
+                        <div class="mt-12 flex gap-4">
+                            <button type="button" @click="showModal = false"
+                                class="flex-1 px-6 py-4 rounded-2xl bg-slate-50 text-slate-400 font-black text-xs uppercase tracking-[0.2em] hover:bg-slate-100 transition-all active:scale-95">
                                 Batal
+                            </button>
+                            <button type="submit"
+                                class="flex-[2] px-6 py-4 rounded-2xl bg-blue-600 text-white font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-blue-200 hover:bg-blue-700 transition-all active:scale-95 flex items-center justify-center gap-2">
+                                <span class="material-symbols-outlined text-lg">save</span>
+                                Simpan Jadwal
                             </button>
                         </div>
                     </form>
@@ -484,29 +654,54 @@
     </div>
 
     @push('scripts')
-        <style>
-            [x-cloak] { display: none !important; }
-            
-            /* Styling Scrollbar Modern */
-            .scrollbar-modern::-webkit-scrollbar {
-                width: 8px;
-                height: 8px;
-            }
-            .scrollbar-modern::-webkit-scrollbar-track {
-                background: #f8fafc;
-            }
-            .scrollbar-modern::-webkit-scrollbar-thumb {
-                background: #cbd5e1;
-                border-radius: 10px;
-                border: 2px solid #f8fafc;
-            }
-            .scrollbar-modern::-webkit-scrollbar-thumb:hover {
-                background: #94a3b8;
-            }
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+        <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+        <script src="https://npmcdn.com/flatpickr/dist/l10n/id.js"></script>
 
-            /* Efek bayangan halus pada kolom waktu yang sticky */
-            .sticky.left-0 {
-                box-shadow: 2px 0 5px -2px rgba(0,0,0,0.05);
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                flatpickr("#inline-calendar", {
+                    inline: true,
+                    locale: {
+                        firstDayOfWeek: 1, // Minggu starts on 0, but displayed first is Senin (1)
+                        weekdays: {
+                            shorthand: ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"],
+                            longhand: ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"]
+                        },
+                        months: {
+                            shorthand: ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"],
+                            longhand: ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"]
+                        }
+                    },
+                    defaultDate: "{{ $selectedDate }}",
+                    dateFormat: "Y-m-d",
+                    disableMobile: true,
+                    showMonths: 1,
+
+                    /* MATIKAN DROPDOWN BULAN & TAHUN */
+                    monthSelectorType: "static",
+
+                    onDayCreate: function (_, __, fp, dayElem) {
+                        const date = dayElem.dateObj;
+                        const day = date.getDay();
+
+                        /* Tandai Sabtu & Minggu sebagai hari libur */
+                        if (day === 0 || day === 6) {
+                            dayElem.classList.add('holiday');
+                        }
+                    },
+
+                    onChange: function (selectedDates, dateStr) {
+                        document.getElementById('dateInput').value = dateStr;
+                        document.getElementById('filterForm').submit();
+                    }
+                });
+            });
+        </script>
+
+        <style>
+            [x-cloak] {
+                display: none !important;
             }
         </style>
     @endpush

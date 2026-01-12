@@ -11,49 +11,92 @@ class ScheduleController extends Controller
         $user = auth()->user();
         $selectedDate = $request->get('date', date('Y-m-d'));
 
-        // Security: Non-superadmins are locked to their own prodi
-        if ($user->role !== 'superadmin') {
-            $selectedProdi = $user->prodi_id;
+        // Fetch all available Prodis and Labs first to determine defaults
+        if ($user->role === 'superadmin') {
+            $allProdis = \App\Models\Prodi::with('labs')->get();
+            $allLabs = \App\Models\Lab::all();
         } else {
-            $selectedProdi = $request->get('prodi_id');
+            $allProdis = \App\Models\Prodi::where('id', $user->prodi_id)->with('labs')->get();
+            $allLabs = \App\Models\Lab::where('prodi_id', $user->prodi_id)->get();
         }
 
-        // Query Labs
+        $allProdiIds = $allProdis->pluck('id')->toArray();
+        $allLabIds = $allLabs->pluck('id')->toArray();
+
+        // Check if filters were explicitly submitted (even if empty)
+        // 'filter_submitted' can be a hidden input in the filter form to distinguish initial load from explicit empty submission
+        $hasFilterRequest = $request->has('prodi_ids') || $request->has('lab_ids') || $request->has('filter_submitted');
+
+        if ($hasFilterRequest) {
+            $selectedProdiIds = $request->get('prodi_ids', []);
+            $selectedLabIds = $request->get('lab_ids', []);
+        } else {
+            // Default: All checked
+            $selectedProdiIds = $allProdiIds;
+            $selectedLabIds = $allLabIds;
+        }
+
+        // Ensure they are arrays
+        if (!is_array($selectedProdiIds))
+            $selectedProdiIds = [$selectedProdiIds];
+        if (!is_array($selectedLabIds))
+            $selectedLabIds = [$selectedLabIds];
+
+        // Security: Non-superadmins are locked to their own prodi
+        // This logic is now integrated into the initial fetching of $allProdis and $allLabs,
+        // and then applied to $selectedProdiIds and $selectedLabIds if the user is not a superadmin.
+        if ($user->role !== 'superadmin') {
+            // Ensure selected prodi IDs only include the user's prodi
+            $selectedProdiIds = array_intersect($selectedProdiIds, [$user->prodi_id]);
+            // Ensure selected lab IDs only include labs belonging to the user's prodi
+            $userProdiLabIds = \App\Models\Lab::where('prodi_id', $user->prodi_id)->pluck('id')->toArray();
+            $selectedLabIds = array_intersect($selectedLabIds, $userProdiLabIds);
+        }
+
+        // Query Labs for the grid headers
         $labQuery = \App\Models\Lab::with('prodi');
 
-        if ($selectedProdi) {
-            $labQuery->where('prodi_id', $selectedProdi);
-        } elseif ($user->role !== 'superadmin') {
-            $labQuery->where('prodi_id', $user->prodi_id);
+        if (!empty($selectedLabIds) || !empty($selectedProdiIds)) {
+            $labQuery->where(function ($q) use ($selectedLabIds, $selectedProdiIds) {
+                if (!empty($selectedLabIds)) {
+                    $q->orWhereIn('id', $selectedLabIds);
+                }
+                if (!empty($selectedProdiIds)) {
+                    $q->orWhereIn('prodi_id', $selectedProdiIds);
+                }
+            });
+        } else {
+            // Explicitly show nothing if nothing is checked
+            $labQuery->whereRaw('1 = 0');
         }
 
         $labs = $labQuery->get();
 
         // Query Schedules for the selected date
-        $scheduleQuery = \App\Models\Schedules::with('lab.prodi')
+        $scheduleQuery = \App\Models\Schedules::with(['lab.prodi', 'creator'])
             ->whereDate('date', $selectedDate)
             ->orderBy('start_time');
 
-        if ($selectedProdi) {
-            $scheduleQuery->whereHas('lab', function ($q) use ($selectedProdi) {
-                $q->where('prodi_id', $selectedProdi);
+        if (!empty($selectedLabIds) || !empty($selectedProdiIds)) {
+            $scheduleQuery->whereHas('lab', function ($q) use ($selectedLabIds, $selectedProdiIds) {
+                $q->where(function ($sq) use ($selectedLabIds, $selectedProdiIds) {
+                    if (!empty($selectedLabIds)) {
+                        $sq->orWhereIn('id', $selectedLabIds);
+                    }
+                    if (!empty($selectedProdiIds)) {
+                        $sq->orWhereIn('prodi_id', $selectedProdiIds);
+                    }
+                });
             });
-        } elseif ($user->role !== 'superadmin') {
-            $scheduleQuery->whereHas('lab', function ($q) use ($user) {
-                $q->where('prodi_id', $user->prodi_id);
-            });
+        } else {
+            // Explicitly show nothing if nothing is checked
+            $scheduleQuery->whereRaw('1 = 0');
         }
 
         $schedules = $scheduleQuery->get();
 
-        // Data for Create/Edit Modal
-        if ($user->role === 'superadmin') {
-            $allLabs = \App\Models\Lab::all();
-            $allProdis = \App\Models\Prodi::all();
-        } else {
-            $allLabs = \App\Models\Lab::where('prodi_id', $user->prodi_id)->get();
-            $allProdis = \App\Models\Prodi::where('id', $user->prodi_id)->get();
-        }
+        // $allProdis and $allLabs are already fetched at the beginning of the method
+        // and are correctly scoped by user role.
 
         return view('schedules.index', [
             'schedules' => $schedules,
@@ -61,7 +104,8 @@ class ScheduleController extends Controller
             'allLabs' => $allLabs,
             'allProdis' => $allProdis,
             'selectedDate' => $selectedDate,
-            'selectedProdi' => $selectedProdi
+            'selectedProdiIds' => $selectedProdiIds,
+            'selectedLabIds' => $selectedLabIds
         ]);
     }
 
