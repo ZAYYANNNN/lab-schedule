@@ -4,16 +4,17 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Prodi;
+use App\Models\Lab;
 use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
     public function index()
     {
-        $admins = User::with('prodi')->where('role', 'admin')->get();
-        $prodis = Prodi::all();
+        $admins = User::with(['lab'])->where('role', 'admin')->get();
+        $labs = Lab::orderBy('name')->get();
 
-        return view('users.index', compact('admins', 'prodis'));
+        return view('users.index', compact('admins', 'labs'));
     }
 
     public function store(Request $r)
@@ -21,14 +22,14 @@ class UserController extends Controller
         $r->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users',
-            'prodi_id' => 'required|exists:prodis,id', // foreign key
+            'lab_id' => 'nullable|exists:labs,id', // direct assignment
             'password' => 'required|min:5',
         ]);
 
         User::create([
             'name' => $r->name,
             'email' => $r->email,
-            'prodi_id' => $r->prodi_id, // foreign key
+            'lab_id' => $r->lab_id, // direct assignment
             'role' => 'admin',
             'password' => bcrypt($r->password),
         ]);
@@ -47,14 +48,14 @@ class UserController extends Controller
         $r->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $user->id,
-            'prodi_id' => 'required|exists:prodis,id', // foreign key
+            'lab_id' => 'nullable|exists:labs,id', // direct assignment
             'password' => 'nullable|min:5',
         ]);
 
         $data = [
             'name' => $r->name,
             'email' => $r->email,
-            'prodi_id' => $r->prodi_id, // foreign key
+            'lab_id' => $r->lab_id, // direct assignment
         ];
 
         if ($r->filled('password')) {

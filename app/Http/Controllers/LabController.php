@@ -17,9 +17,14 @@ class LabController extends Controller
         $q = $r->search;
 
         $query = Lab::query()
-            ->select(['id', 'name', 'kode_lab', 'lokasi', 'prodi', 'prodi_id', 'kapasitas', 'pj', 'status', 'foto'])
+            ->select(['id', 'name', 'kode_lab', 'lokasi', 'type', 'prodi', 'prodi_id', 'kapasitas', 'pj', 'status', 'foto'])
             ->when(
-                $user->role === 'admin',
+                $user->role === 'admin' && $user->lab_id,
+                fn($q2) =>
+                $q2->where('id', $user->lab_id)
+            )
+            ->when(
+                $user->role === 'admin' && !$user->lab_id && $user->prodi_id,
                 fn($q2) =>
                 $q2->where('prodi_id', $user->prodi_id)
             )
@@ -59,15 +64,16 @@ class LabController extends Controller
             'lokasi' => 'required|string',
             'kapasitas' => 'required|integer|min:1',
             'pj' => 'nullable|string',
-            'pj' => 'nullable|string',
             'status' => 'required|in:Tersedia,Digunakan,Maintenance',
             'foto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
         ];
 
         // Jika superadmin, validasi prodi_id
         if (auth()->user()->role === 'superadmin') {
-            $rules['prodi_id'] = 'required|exists:prodis,id';
+            $rules['prodi_id'] = 'nullable|exists:prodis,id';
         }
+
+        $rules['type'] = 'required|in:praktikum,pengujian,sewa';
 
         $r->validate($rules);
 
@@ -77,6 +83,7 @@ class LabController extends Controller
             'lokasi',
             'kapasitas',
             'pj',
+            'type',
             'status'
         ]);
 
@@ -88,7 +95,7 @@ class LabController extends Controller
         } else {
             // Superadmin: Pakai inputan
             $data['prodi_id'] = $r->prodi_id;
-            $data['prodi'] = Prodi::where('id', $r->prodi_id)->value('name');
+            $data['prodi'] = $r->prodi_id ? Prodi::where('id', $r->prodi_id)->value('name') : null;
         }
 
         // UUID WAJIB DISET
@@ -110,8 +117,10 @@ class LabController extends Controller
     public function update(Request $r, Lab $lab)
     {
         // Check permission for admin
-        if (auth()->user()->role === 'admin' && $lab->prodi_id !== auth()->user()->prodi_id) {
-            abort(403, 'Unauthorized action.');
+        if (auth()->user()->role === 'admin') {
+            if ($lab->id !== auth()->user()->lab_id && $lab->prodi_id !== auth()->user()->prodi_id) {
+                abort(403, 'Unauthorized action.');
+            }
         }
 
         $rules = [
@@ -120,13 +129,13 @@ class LabController extends Controller
             'lokasi' => 'required|string',
             'kapasitas' => 'required|integer|min:1',
             'pj' => 'nullable|string',
-            'pj' => 'nullable|string',
+            'type' => 'required|in:praktikum,pengujian,sewa',
             'status' => 'required|in:Tersedia,Digunakan,Maintenance',
             'foto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
         ];
 
         if (auth()->user()->role === 'superadmin') {
-            $rules['prodi_id'] = 'required|exists:prodis,id';
+            $rules['prodi_id'] = 'nullable|exists:prodis,id';
         }
 
         $r->validate($rules);
@@ -137,6 +146,7 @@ class LabController extends Controller
             'lokasi',
             'kapasitas',
             'pj',
+            'type',
             'status'
         ]);
 
@@ -144,7 +154,7 @@ class LabController extends Controller
             // Jika superadmin mengubah prodi
             if ($r->prodi_id !== $lab->prodi_id) {
                 $data['prodi_id'] = $r->prodi_id;
-                $data['prodi'] = Prodi::where('id', $r->prodi_id)->value('name');
+                $data['prodi'] = $r->prodi_id ? Prodi::where('id', $r->prodi_id)->value('name') : null;
             }
         }
         // Admin TIDAK BOLEH update prodi, jadi tidak ada logika else untuk set prodi_id
@@ -171,8 +181,10 @@ class LabController extends Controller
     public function destroy(Lab $lab)
     {
         // Check permission for admin
-        if (auth()->user()->role === 'admin' && $lab->prodi_id !== auth()->user()->prodi_id) {
-            abort(403, 'Unauthorized action.');
+        if (auth()->user()->role === 'admin') {
+            if ($lab->id !== auth()->user()->lab_id && $lab->prodi_id !== auth()->user()->prodi_id) {
+                abort(403, 'Unauthorized action.');
+            }
         }
 
         // Validasi: Cek jadwal dan peminjaman

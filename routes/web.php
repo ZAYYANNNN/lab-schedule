@@ -31,9 +31,6 @@ Route::middleware(['auth'])->group(function () {
 
     // Users - Superadmin only (proteksi di controller)
     Route::resource('users', UserController::class);
-
-    // Prodis - Superadmin only
-    Route::resource('prodis', \App\Http\Controllers\ProdiController::class)->only(['store', 'destroy']);
 });
 
 // Routes yang MEMERLUKAN pengecekan Prodi (Admin dibatasi per Prodi)

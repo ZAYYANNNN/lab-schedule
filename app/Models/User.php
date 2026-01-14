@@ -7,7 +7,13 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 class User extends Authenticatable
 {
     protected $fillable = [
-        'name', 'email', 'password', 'role', 'prodi', 'prodi_id'
+        'name',
+        'email',
+        'password',
+        'role',
+        'prodi',
+        'prodi_id',
+        'lab_id'
     ];
 
     public function borrowings()
@@ -33,5 +39,10 @@ class User extends Authenticatable
     public function prodi()
     {
         return $this->belongsTo(Prodi::class, 'prodi_id');
+    }
+
+    public function lab()
+    {
+        return $this->belongsTo(Lab::class, 'lab_id');
     }
 }
