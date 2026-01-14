@@ -255,7 +255,7 @@
                             <span class="material-symbols-outlined text-blue-600 mr-2 text-[20px]">
                                 {{ auth()->user()->role === 'superadmin' ? 'account_tree' : 'meeting_room' }}
                             </span>
-                            {{ auth()->user()->role === 'superadmin' ? 'Filter Prodi & Lab' : 'Filter Lab' }}
+                            {{ auth()->user()->role === 'superadmin' ? 'Filter Lab' : 'Filter Lab' }}
                         </h3>
 
                         <div class="space-y-4 max-h-[400px] overflow-y-auto pr-2 scrollbar-thin">
