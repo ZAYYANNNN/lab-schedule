@@ -164,8 +164,6 @@
                 </div>
             </aside>
 
-            <div class="flex-1">
-
             <div class="flex-1 min-w-0">
                 {{-- Table Card --}}
                 <div class="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden ring-1 ring-slate-100/50">
@@ -198,10 +196,6 @@
                             <tbody class="divide-y divide-slate-50">
                                 <template x-for="b in filteredBorrowings" :key="b.id">
                                     <tr class="hover:bg-blue-50/30 transition-all duration-300 group">
-                                @forelse ($borrowings as $b)
-                                    <tr class="hover:bg-blue-50/30 transition-all duration-300 group"
-                                        data-lab-id="{{ $b->lab_id }}" data-status="{{ $b->status }}"
-                                        x-show="(!selectedLabId || String($el.dataset.labId) === String(selectedLabId)) && (selectedStatus === 'all' || $el.dataset.status === selectedStatus)">
                                         <td class="px-8 py-6">
                                             <div class="flex items-center gap-4">
                                                 <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-white shadow-inner flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform duration-500">
@@ -247,7 +241,7 @@
                                                         class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-600 hover:text-white hover:shadow-lg hover:shadow-blue-200 transition-all flex items-center justify-center">
                                                         <span class="material-symbols-outlined text-[20px]">edit_note</span>
                                                     </button>
-                                                    <form action="{{ route('borrowings.destroy', $b->id) }}" method="POST"
+                                                    <form :action="`/borrowings/${b.id}`" method="POST"
                                                         onsubmit="return confirm('Hapus data peminjaman ini?')">
                                                         @csrf @method('DELETE')
                                                         <button type="submit" class="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 border border-rose-100 hover:bg-rose-600 hover:text-white hover:shadow-lg hover:shadow-rose-200 transition-all flex items-center justify-center">
@@ -261,8 +255,6 @@
                                 </template>
                                 <template x-if="filteredBorrowings.length === 0">
                                     <tr>
-                                @empty
-                                    <tr x-show="borrowings.length === 0" x-cloak>
                                         <td colspan="5" class="px-8 py-24 text-center">
                                             <div class="flex flex-col items-center group">
                                                 <div class="w-24 h-24 rounded-[2rem] bg-slate-50 flex items-center justify-center mb-6 text-slate-200 group-hover:scale-110 transition-transform duration-700">
@@ -274,11 +266,6 @@
                                         </td>
                                     </tr>
                                 </template>
-
-                                @endforelse
-                                    <tr x-show="borrowings.length > 0 && filteredBorrowings.length === 0" x-cloak>
-                                        <td colspan="5" class="px-8 py-10 text-center text-slate-400 font-medium">Tidak ada peminjaman yang sesuai filter.</td>
-                                    </tr>
                             </tbody>
                         </table>
                     </div>
@@ -505,15 +492,30 @@
                     },
 
                     get filteredBorrowings() {
-                        return this.borrowings.filter(b => {
-                            if (this.selectedLabId && String(b.lab_id) !== String(this.selectedLabId)) {
-                                return false;
-                            }
-                            if (this.selectedStatus && this.selectedStatus !== 'all' && b.status !== this.selectedStatus) {
-                                return false;
-                            }
-                            return true;
-                        });
+                        let result = this.borrowings;
+                        
+                        // Filter by Lab (Superadmin sidebar)
+                        if (this.selectedLabId) {
+                            result = result.filter(b => String(b.lab_id) === String(this.selectedLabId));
+                        }
+
+                        // Filter by Status (Table filter)
+                        if (this.selectedStatus && this.selectedStatus !== 'all') {
+                            result = result.filter(b => b.status === this.selectedStatus);
+                        }
+
+                        // Filter by Search Term
+                        if (this.searchTerm) {
+                            const term = this.searchTerm.toLowerCase();
+                            result = result.filter(b => 
+                                (b.nama_peminjam && b.nama_peminjam.toLowerCase().includes(term)) ||
+                                (b.nim && b.nim.toLowerCase().includes(term)) ||
+                                (b.asset?.nama && b.asset.nama.toLowerCase().includes(term)) ||
+                                (b.lab?.name && b.lab.name.toLowerCase().includes(term))
+                            );
+                        }
+
+                        return result;
                     },
 
                     get filteredGroupedLabs() {
