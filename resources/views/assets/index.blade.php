@@ -128,13 +128,13 @@
             <aside class="w-full lg:w-96 flex-shrink-0 lg:sticky lg:top-8">
                 <div
                     class="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden ring-1 ring-slate-100/50">
+
                     <div class="px-8 py-7 border-b border-slate-50 bg-slate-50/50">
                         <div class="flex items-center gap-3 mb-6">
                             <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
                                 <span class="material-symbols-outlined text-base">domain</span>
                             </div>
-                            <h2 class="font-black text-slate-800 uppercase text-xs tracking-[0.2em]">Daftar Laboratorium
-                            </h2>
+                            <h2 class="font-black text-slate-800 uppercase text-xs tracking-[0.2em]">Daftar Laboratorium</h2>
                         </div>
                         <div class="relative group">
                             <span
@@ -437,7 +437,24 @@
                             </div>
                         </div>
 
-                        <input type="hidden" name="lab_id" x-model="formData.lab_id">
+                        {{-- LAB SELECTION --}}
+                        <div class="mb-8">
+                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">Pilih Laboratorium</label>
+                            <div class="relative group">
+                                <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors">door_front</span>
+                                <select name="lab_id" x-model="formData.lab_id" required
+                                    class="w-full bg-slate-50 border-none rounded-2xl py-4 pl-12 pr-4 text-slate-700 font-bold focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-sm appearance-none cursor-pointer">
+                                    <option value="">-- Pilih Lab --</option>
+                                    <template x-for="lab in labs" :key="lab.id">
+                                        <option :value="lab.id" x-text="lab.name" :selected="lab.id === formData.lab_id"></option>
+                                    </template>
+                                </select>
+                                <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none">expand_more</span>
+                            </div>
+                            <template x-if="labs.length === 0">
+                                <p class="text-rose-500 text-[10px] mt-2 font-bold ml-1 tracking-tight">Peringatan: Tidak ada Lab yang tersedia di Prodi ini. Silakan buat Lab terlebih dahulu.</p>
+                            </template>
+                        </div>
 
                         <div class="space-y-8">
                             <div>
@@ -525,4 +542,49 @@
         </div>
 
     </div>
+
+    @push('scripts')
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+        <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+        <script src="https://npmcdn.com/flatpickr/dist/l10n/id.js"></script>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                flatpickr("#asset-sidebar-calendar", {
+                    inline: true,
+                    locale: {
+                        firstDayOfWeek: 1,
+                        weekdays: {
+                            shorthand: ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"],
+                            longhand: ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"]
+                        },
+                        months: {
+                            shorthand: ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"],
+                            longhand: ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"]
+                        }
+                    },
+                    defaultDate: new Date(),
+                    dateFormat: "Y-m-d",
+                    disableMobile: true,
+                    showMonths: 1,
+                    monthSelectorType: "static",
+
+                    onDayCreate: function (_, __, fp, dayElem) {
+                        const date = dayElem.dateObj;
+                        const day = date.getDay();
+
+                        if (day === 0 || day === 6) {
+                            dayElem.classList.add('holiday');
+                        }
+                    }
+                });
+            });
+        </script>
+
+        <style>
+            [x-cloak] {
+                display: none !important;
+            }
+        </style>
+    @endpush
 </x-app-layout>

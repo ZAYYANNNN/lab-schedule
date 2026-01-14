@@ -94,6 +94,23 @@ class ScheduleController extends Controller
         }
 
         $schedules = $scheduleQuery->get();
+        
+        // Fetch all dates that have schedules for the markers
+        $scheduledDates = \App\Models\Schedules::query()
+            ->selectRaw('DISTINCT date')
+            ->whereHas('lab', function ($q) use ($selectedLabIds, $selectedProdiIds) {
+                $q->where(function ($sq) use ($selectedLabIds, $selectedProdiIds) {
+                    if (!empty($selectedLabIds)) {
+                        $sq->orWhereIn('id', $selectedLabIds);
+                    }
+                    if (!empty($selectedProdiIds)) {
+                        $sq->orWhereIn('prodi_id', $selectedProdiIds);
+                    }
+                });
+            })
+            ->pluck('date')
+            ->map(fn($d) => \Carbon\Carbon::parse($d)->format('Y-m-d'))
+            ->toArray();
 
         // $allProdis and $allLabs are already fetched at the beginning of the method
         // and are correctly scoped by user role.
@@ -105,7 +122,8 @@ class ScheduleController extends Controller
             'allProdis' => $allProdis,
             'selectedDate' => $selectedDate,
             'selectedProdiIds' => $selectedProdiIds,
-            'selectedLabIds' => $selectedLabIds
+            'selectedLabIds' => $selectedLabIds,
+            'scheduledDates' => $scheduledDates
         ]);
     }
 
@@ -129,6 +147,22 @@ class ScheduleController extends Controller
             'end_time' => 'required|after:start_time',
             'activity' => 'required|string|max:255',
         ]);
+
+        // Conflict Detection
+        $conflict = \App\Models\Schedules::where('lab_id', $request->lab_id)
+            ->whereDate('date', $request->date)
+            ->where(function ($query) use ($request) {
+                // Check for overlapping time
+                // A new schedule (StartA, EndA) overlaps with existing (StartB, EndB) if:
+                // StartA < EndB AND EndA > StartB
+                $query->where('start_time', '<', $request->end_time)
+                      ->where('end_time', '>', $request->start_time);
+            })
+            ->exists();
+
+        if ($conflict) {
+            return back()->withErrors(['collision' => 'Jadwal bertabrakan dengan kegiatan lain di lab ini pada waktu tersebut.'])->withInput();
+        }
 
         $validated['created_by'] = auth()->id();
         \App\Models\Schedules::create($validated);

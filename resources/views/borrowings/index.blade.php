@@ -29,25 +29,96 @@
         </div>
 
         <div class="flex flex-col lg:flex-row gap-10 items-start px-2">
-            {{-- Superadmin Sidebar: Filter Lab --}}
-            @if(auth()->user()->role === 'superadmin')
-                <aside class="w-full lg:w-96 flex-shrink-0 lg:sticky lg:top-8">
-                    <div class="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden ring-1 ring-slate-100/50">
-                        <div class="px-8 py-7 border-b border-slate-50 bg-slate-50/50">
-                            <div class="flex items-center gap-3 mb-6">
-                                <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
-                                    <span class="material-symbols-outlined text-base">filter_alt</span>
-                                </div>
-                                <h2 class="font-black text-slate-800 uppercase text-xs tracking-[0.2em]">Filter Laboratorium</h2>
+            {{-- SIDEBAR: FILTER & CALENDAR --}}
+            <aside class="w-full lg:w-96 flex-shrink-0 lg:sticky lg:top-8">
+                <div class="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden ring-1 ring-slate-100/50">
+                    
+                    {{-- CALENDAR SIDEBAR --}}
+                    <div class="px-8 py-7 bg-slate-50/30 border-b border-slate-50">
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
+                                <span class="material-symbols-outlined text-base">calendar_month</span>
                             </div>
+                            <h2 class="font-black text-slate-800 uppercase text-xs tracking-[0.2em]">Jadwal Pengembalian</h2>
+                        </div>
+                        <div class="rounded-2xl bg-white border border-gray-100 shadow-sm p-2
+                            [&_.flatpickr-calendar]:w-full
+                            [&_.flatpickr-calendar]:border-0
+                            [&_.flatpickr-calendar]:shadow-none
+
+                            /* HEADER ROW */
+                            [&_.flatpickr-months]:flex
+                            [&_.flatpickr-months]:items-center
+                            [&_.flatpickr-months]:justify-between
+                            [&_.flatpickr-months]:mb-3
+
+                            [&_.flatpickr-prev-month]:static
+                            [&_.flatpickr-next-month]:static
+                            [&_.flatpickr-prev-month]:p-1
+                            [&_.flatpickr-next-month]:p-1
+
+                            /* BULAN + TAHUN */
+                            [&_.flatpickr-current-month]:flex
+                            [&_.flatpickr-current-month]:items-center
+                            [&_.flatpickr-current-month]:gap-1
+                            [&_.flatpickr-current-month]:flex-1
+                            [&_.flatpickr-current-month]:justify-center
+
+                            [&_.cur-month]:text-base
+                            [&_.cur-month]:font-semibold
+                            [&_.cur-month]:leading-none
+                            [&_.cur-month]:text-gray-800
+
+                            [&_.cur-year]:text-base
+                            [&_.cur-year]:font-semibold
+                            [&_.cur-year]:leading-none
+                            [&_.cur-year]:text-gray-800
+                            [&_.cur-year]:bg-transparent
+                            [&_.cur-year]:border-0
+                            [&_.cur-year]:pointer-events-none
+
+                            /* DOT MARKER */
+                            [&_.return-dot]:absolute
+                            [&_.return-dot]:bottom-1
+                            [&_.return-dot]:left-1/2
+                            [&_.return-dot]:-translate-x-1/2
+                            [&_.return-dot]:w-1
+                            [&_.return-dot]:h-1
+                            [&_.return-dot]:rounded-full
+                            [&_.return-dot]:bg-rose-500
+                        ">
+                            <div id="borrowing-sidebar-calendar"></div>
+                        </div>
+                    </div>
+
+                    <div class="px-8 py-7 border-b border-slate-50 bg-slate-50/50">
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
+                                <span class="material-symbols-outlined text-base">filter_alt</span>
+                            </div>
+                            <h2 class="font-black text-slate-800 uppercase text-xs tracking-[0.2em]">Filter & Pencarian</h2>
+                        </div>
+                        <div class="flex flex-col gap-4">
                             <div class="relative group">
                                 <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors text-[20px]">search</span>
-                                <input type="text" x-model="searchTerm" placeholder="Cari prodi atau lab..." 
+                                <input type="text" x-model="searchTerm" placeholder="Cari prodi, lab, atau peminjam..." 
                                     class="w-full bg-white border-slate-100 rounded-2xl pl-12 pr-4 py-3.5 text-sm font-bold focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all placeholder:text-slate-300 shadow-inner">
                             </div>
+                            <div class="relative">
+                                <select x-model="filterStatus" class="w-full bg-white border-slate-100 rounded-2xl pl-4 pr-10 py-3.5 text-sm font-bold focus:ring-2 focus:ring-blue-500 transition-all shadow-inner text-slate-600 appearance-none cursor-pointer">
+                                    <option value="">Semua Status</option>
+                                    <option value="pending">Menunggu</option>
+                                    <option value="approved">Disetujui</option>
+                                    <option value="rejected">Ditolak</option>
+                                    <option value="returned">Kembali</option>
+                                </select>
+                                <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none">filter_list</span>
+                            </div>
                         </div>
-                        
-                        <div class="max-h-[600px] overflow-y-auto scrollbar-none select-none p-4 space-y-2">
+                    </div>
+                    
+                    @if(auth()->user()->role === 'superadmin')
+                        <div class="max-h-[400px] overflow-y-auto scrollbar-none select-none p-4 space-y-2">
                             <div @click="selectedLabId = null"
                                 :class="!selectedLabId ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'text-slate-500 hover:bg-slate-50 hover:text-blue-600'"
                                 class="p-4 cursor-pointer transition-all rounded-[1.5rem] border border-transparent flex items-center gap-4 font-black text-sm tracking-tight">
@@ -89,9 +160,9 @@
                                 </div>
                             </template>
                         </div>
-                    </div>
-                </aside>
-            @endif
+                    @endif
+                </div>
+            </aside>
 
             <div class="flex-1">
 
@@ -110,7 +181,7 @@
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-50">
-                                @forelse ($borrowings as $b)
+                                <template x-for="b in filteredBorrowings" :key="b.id">
                                     <tr class="hover:bg-blue-50/30 transition-all duration-300 group">
                                         <td class="px-8 py-6">
                                             <div class="flex items-center gap-4">
@@ -118,17 +189,17 @@
                                                     <span class="material-symbols-outlined text-2xl">person</span>
                                                 </div>
                                                 <div>
-                                                    <p class="font-black text-slate-900 tracking-tight leading-none mb-1.5">{{ $b->nama_peminjam }}</p>
-                                                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">{{ $b->nim }}</p>
+                                                    <p class="font-black text-slate-900 tracking-tight leading-none mb-1.5" x-text="b.nama_peminjam"></p>
+                                                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest" x-text="b.nim"></p>
                                                 </div>
                                             </div>
                                         </td>
                                         <td class="px-8 py-6">
                                             <div>
-                                                <p class="font-black text-slate-800 tracking-tight group-hover:text-blue-600 transition-colors mb-1.5">{{ $b->asset->nama ?? 'Aset dihapus' }}</p>
+                                                <p class="font-black text-slate-800 tracking-tight group-hover:text-blue-600 transition-colors mb-1.5" x-text="b.asset?.nama ?? 'Aset dihapus'"></p>
                                                 <div class="flex items-center gap-2">
                                                     <span class="material-symbols-outlined text-base text-blue-500 opacity-60">door_front</span>
-                                                    <span class="text-[11px] font-bold text-slate-500 truncate max-w-[150px]">{{ $b->lab->name }}</span>
+                                                    <span class="text-[11px] font-bold text-slate-500 truncate max-w-[150px]" x-text="b.lab?.name"></span>
                                                 </div>
                                             </div>
                                         </td>
@@ -136,41 +207,28 @@
                                             <div class="space-y-1.5">
                                                 <div class="flex items-center gap-2 text-slate-600">
                                                     <span class="material-symbols-outlined text-base text-emerald-500">calendar_today</span>
-                                                    <span class="text-[13px] font-black tracking-tight">{{ $b->borrow_date->format('d M Y') }}</span>
+                                                    <span class="text-[13px] font-black tracking-tight" x-text="formatDate(b.borrow_date)"></span>
                                                 </div>
                                                 <div class="flex items-center gap-2 text-slate-400">
                                                     <span class="material-symbols-outlined text-base">history</span>
-                                                    <span class="text-[11px] font-bold italic tracking-tight">Kembali: {{ $b->return_date->format('d M Y') }}</span>
+                                                    <span class="text-[11px] font-bold italic tracking-tight" x-text="'Kembali: ' + formatDate(b.return_date)"></span>
                                                 </div>
                                             </div>
                                         </td>
                                         <td class="px-8 py-6">
-                                            @php
-                                                $colors = [
-                                                    'pending' => 'bg-amber-50 text-amber-600 border-amber-100',
-                                                    'approved' => 'bg-blue-50 text-blue-600 border-blue-100',
-                                                    'rejected' => 'bg-rose-50 text-rose-600 border-rose-100',
-                                                    'returned' => 'bg-emerald-50 text-emerald-600 border-emerald-100',
-                                                ];
-                                                $labels = [
-                                                    'pending' => 'Menunggu',
-                                                    'approved' => 'Disetujui',
-                                                    'rejected' => 'Ditolak',
-                                                    'returned' => 'Kembali',
-                                                ];
-                                            @endphp
-                                            <span class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] border shadow-sm {{ $colors[$b->status] ?? 'bg-slate-50 text-slate-600 border-slate-100' }}">
-                                                {{ $labels[$b->status] ?? $b->status }}
+                                            <span class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] border shadow-sm"
+                                                :class="getStatusColor(b.status)"
+                                                x-text="getStatusLabel(b.status)">
                                             </span>
                                         </td>
                                         <td class="px-8 py-6 text-right">
                                             <div class="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-2 group-hover:translate-x-0">
                                                 @if(in_array(auth()->user()->role, ['admin', 'superadmin']))
-                                                    <button @click="openEditModal({{ $b }})"
+                                                    <button @click="openEditModal(b)"
                                                         class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-600 hover:text-white hover:shadow-lg hover:shadow-blue-200 transition-all flex items-center justify-center">
                                                         <span class="material-symbols-outlined text-[20px]">edit_note</span>
                                                     </button>
-                                                    <form action="{{ route('borrowings.destroy', $b->id) }}" method="POST"
+                                                    <form :action="`/borrowings/${b.id}`" method="POST"
                                                         onsubmit="return confirm('Hapus data peminjaman ini?')">
                                                         @csrf @method('DELETE')
                                                         <button class="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 border border-rose-100 hover:bg-rose-600 hover:text-white hover:shadow-lg hover:shadow-rose-200 transition-all flex items-center justify-center">
@@ -181,7 +239,8 @@
                                             </div>
                                         </td>
                                     </tr>
-                                @empty
+                                </template>
+                                <template x-if="filteredBorrowings.length === 0">
                                     <tr>
                                         <td colspan="5" class="px-8 py-24 text-center">
                                             <div class="flex flex-col items-center group">
@@ -189,11 +248,11 @@
                                                     <span class="material-symbols-outlined text-5xl opacity-30 group-hover:text-blue-500 group-hover:opacity-100 transition-all duration-700">inventory</span>
                                                 </div>
                                                 <h3 class="text-slate-900 font-black text-xl tracking-tighter mb-2">Tidak Ada Data Peminjaman</h3>
-                                                <p class="text-slate-400 font-medium text-sm max-w-[320px] mx-auto tracking-tight leading-relaxed italic">Catatan peminjaman barang belum tersedia dalam sistem saat ini.</p>
+                                                <p class="text-slate-400 font-medium text-sm max-w-[320px] mx-auto tracking-tight leading-relaxed italic">Sesuaikan filter atau tambahkan data baru.</p>
                                             </div>
                                         </td>
                                     </tr>
-                                @endforelse
+                                </template>
                             </tbody>
                         </table>
                     </div>
@@ -338,12 +397,57 @@
     </div>
 
     @push('scripts')
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+        <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+        <script src="https://npmcdn.com/flatpickr/dist/l10n/id.js"></script>
+
         <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const returnDates = @json($returnDates);
+
+                flatpickr("#borrowing-sidebar-calendar", {
+                    inline: true,
+                    locale: {
+                        firstDayOfWeek: 1,
+                        weekdays: {
+                            shorthand: ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"],
+                            longhand: ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"]
+                        },
+                        months: {
+                            shorthand: ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"],
+                            longhand: ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"]
+                        }
+                    },
+                    defaultDate: new Date(),
+                    dateFormat: "Y-m-d",
+                    disableMobile: true,
+                    showMonths: 1,
+                    monthSelectorType: "static",
+
+                    onDayCreate: function (_, __, fp, dayElem) {
+                        const date = dayElem.dateObj;
+                        const day = date.getDay();
+
+                        if (day === 0 || day === 6) {
+                            dayElem.classList.add('holiday');
+                        }
+
+                        const dateStr = fp.formatDate(date, "Y-m-d");
+                        if (returnDates.includes(dateStr)) {
+                            const dot = document.createElement("span");
+                            dot.className = "return-dot";
+                            dayElem.appendChild(dot);
+                        }
+                    }
+                });
+            });
+
             function borrowingPage() {
                 return {
                     openModal: false,
                     editMode: false,
                     searchTerm: '',
+                    filterStatus: '',
                     selectedLabId: null,
                     expandedProdiId: null,
                     form: {
@@ -374,8 +478,17 @@
                     },
 
                     get filteredBorrowings() {
-                        if (!this.selectedLabId) return this.borrowings;
-                        return this.borrowings.filter(b => b.lab_id === this.selectedLabId);
+                        let result = this.borrowings;
+                        
+                        if (this.selectedLabId) {
+                            result = result.filter(b => b.lab_id === this.selectedLabId);
+                        }
+
+                        if (this.filterStatus) {
+                            result = result.filter(b => b.status === this.filterStatus);
+                        }
+
+                        return result;
                     },
 
                     get filteredGroupedLabs() {

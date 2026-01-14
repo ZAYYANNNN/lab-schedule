@@ -59,6 +59,7 @@ class LabController extends Controller
             'lokasi' => 'required|string',
             'kapasitas' => 'required|integer|min:1',
             'pj' => 'nullable|string',
+            'pj' => 'nullable|string',
             'status' => 'required|in:Tersedia,Digunakan,Maintenance',
             'foto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
         ];
@@ -119,6 +120,7 @@ class LabController extends Controller
             'lokasi' => 'required|string',
             'kapasitas' => 'required|integer|min:1',
             'pj' => 'nullable|string',
+            'pj' => 'nullable|string',
             'status' => 'required|in:Tersedia,Digunakan,Maintenance',
             'foto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
         ];
@@ -171,6 +173,15 @@ class LabController extends Controller
         // Check permission for admin
         if (auth()->user()->role === 'admin' && $lab->prodi_id !== auth()->user()->prodi_id) {
             abort(403, 'Unauthorized action.');
+        }
+
+        // Validasi: Cek jadwal dan peminjaman
+        if ($lab->schedules()->exists()) {
+            return back()->with('error', 'Gagal menghapus! Lab ini masih memiliki jadwal terkait.');
+        }
+
+        if ($lab->borrowings()->exists()) {
+            return back()->with('error', 'Gagal menghapus! Lab ini memiliki riwayat peminjaman.');
         }
 
         // Hapus foto juga

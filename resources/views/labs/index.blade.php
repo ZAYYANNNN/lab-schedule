@@ -26,6 +26,20 @@
             @endif
         </p>
 
+        {{-- Flash Messages --}}
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 px-1 mt-4">
+            @if(session('success'))
+                <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
+                    <span class="block sm:inline">{{ session('success') }}</span>
+                </div>
+            @endif
+            @if(session('error'))
+                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                    <span class="block sm:inline">{{ session('error') }}</span>
+                </div>
+            @endif
+        </div>
+
 
         {{-- ================= SEARCH ================= --}}
         <div class="py-4">
@@ -167,13 +181,25 @@
 
 
         {{-- ================= MODAL CREATE ================= --}}
-        <div x-show="openCreate" x-transition:enter="ease-out duration-300"
-            x-transition:enter-start="opacity-0 scale-90" x-transition:enter-end="opacity-100 scale-100"
-            x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 scale-100"
-            x-transition:leave-end="opacity-0 scale-90"
-            class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+        <div x-show="openCreate" class="fixed inset-0 z-50 overflow-y-auto" x-cloak>
+            <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                
+                {{-- Backdrop --}}
+                <div x-show="openCreate" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0"
+                    x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200"
+                    x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                    @click="openCreate = false" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
 
-            <div @click.outside="openCreate = false" class="bg-white w-[34rem] p-6 rounded-xl shadow-lg">
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+
+                {{-- Modal Panel --}}
+                <div x-show="openCreate" x-transition:enter="ease-out duration-300"
+                    x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                    x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                    x-transition:leave="ease-in duration-200"
+                    x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                    x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                    class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full p-6">
 
                 <h2 class="text-xl font-bold mb-4">Tambah Laboratorium Baru</h2>
 
@@ -264,16 +290,29 @@
 
 
         {{-- ================= MODAL EDIT ================= --}}
-        <div x-show="openEdit" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 scale-90"
-            x-transition:enter-end="opacity-100 scale-100" x-transition:leave="ease-in duration-200"
-            x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-90"
-            class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+        <div x-show="openEdit" class="fixed inset-0 z-50 overflow-y-auto" x-cloak>
+            <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
 
-            <div @click.outside="openEdit = false" class="bg-white w-[34rem] p-6 rounded-xl shadow-lg">
+                {{-- Backdrop --}}
+                <div x-show="openEdit" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0"
+                    x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200"
+                    x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                    @click="openEdit = false" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+
+                {{-- Modal Panel --}}
+                <div x-show="openEdit" x-transition:enter="ease-out duration-300"
+                    x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                    x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                    x-transition:leave="ease-in duration-200"
+                    x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                    x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                    class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full p-6">
 
                 <h2 class="text-xl font-bold mb-4">Edit Laboratorium</h2>
 
-                <form :action="`/labs/${editData.id}`" method="POST" enctype="multipart/form-data">
+                <form :action="'/labs/' + editData.id" method="POST" enctype="multipart/form-data">
                     @csrf @method('PUT')
 
                     <div class="grid grid-cols-2 gap-3">

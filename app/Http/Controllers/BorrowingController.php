@@ -36,7 +36,16 @@ class BorrowingController extends Controller
             $labs = Lab::with('assets')->get();
         }
 
-        return view('borrowings.index', compact('borrowings', 'labs', 'prodis'));
+        // Fetch return dates for markers
+        $returnDates = $borrowingsQuery->clone()
+            ->reorder()
+            ->whereIn('status', ['pending', 'approved'])
+            ->selectRaw('DISTINCT return_date')
+            ->pluck('return_date')
+            ->map(fn($d) => \Carbon\Carbon::parse($d)->format('Y-m-d'))
+            ->toArray();
+
+        return view('borrowings.index', compact('borrowings', 'labs', 'prodis', 'returnDates'));
     }
 
     public function store(Request $request)

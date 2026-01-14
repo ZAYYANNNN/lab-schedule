@@ -233,6 +233,16 @@
                         [&_.cur-year]:bg-transparent
                         [&_.cur-year]:border-0
                         [&_.cur-year]:pointer-events-none
+
+                        /* DOT MARKER */
+                        [&_.schedule-dot]:absolute
+                        [&_.schedule-dot]:bottom-1
+                        [&_.schedule-dot]:left-1/2
+                        [&_.schedule-dot]:-translate-x-1/2
+                        [&_.schedule-dot]:w-1
+                        [&_.schedule-dot]:h-1
+                        [&_.schedule-dot]:rounded-full
+                        [&_.schedule-dot]:bg-blue-500
                     ">
 
                         <div id="inline-calendar"></div>
@@ -567,6 +577,13 @@
                             </div>
                         </div>
 
+                        @error('collision')
+                            <div class="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-600 flex items-center gap-3">
+                                <span class="material-symbols-outlined">warning</span>
+                                <p class="text-sm font-bold">{{ $message }}</p>
+                            </div>
+                        @enderror
+
                         <div class="space-y-8">
                             <div class="grid grid-cols-2 gap-6">
                                 {{-- PRODI --}}
@@ -660,6 +677,8 @@
 
         <script>
             document.addEventListener('DOMContentLoaded', function () {
+                const scheduledDates = @json($scheduledDates);
+
                 flatpickr("#inline-calendar", {
                     inline: true,
                     locale: {
@@ -688,6 +707,14 @@
                         /* Tandai Sabtu & Minggu sebagai hari libur */
                         if (day === 0 || day === 6) {
                             dayElem.classList.add('holiday');
+                        }
+
+                        // Add dot for scheduled dates
+                        const dateStr = fp.formatDate(date, "Y-m-d");
+                        if (scheduledDates.includes(dateStr)) {
+                            const dot = document.createElement("span");
+                            dot.className = "schedule-dot";
+                            dayElem.appendChild(dot);
                         }
                     },
 
