@@ -16,6 +16,7 @@ class Lab extends Model
     protected $fillable = [
         'name',
         'kode_lab',
+        'type',
         'lokasi',
         'prodi',
         'prodi_id',

@@ -71,14 +71,14 @@
                                         <span x-text="lab.prodi"></span>
                                     </span>
                                 </template>
-                                {{-- Status Badge --}}
-                                <span
-                                    class="absolute top-2 right-2 px-3 py-1 text-xs font-semibold rounded-full shadow-md"
-                                    :class="{
-                            'bg-green-300 text-gray-800': lab.status=='Tersedia',
-                            'bg-red-300 text-gray-800': lab.status=='Maintenance',
-                            'bg-yellow-300 text-gray-800': lab.status=='Digunakan'
-                        }" x-text="lab.status"></span>
+                                {{-- Status & Type Badge --}}
+                                <div class="absolute top-2 right-2 flex flex-col gap-1 items-end">
+                                    <span class="px-3 py-1 text-xs font-semibold rounded-full shadow-md" :class="{
+                                            'bg-green-300 text-gray-800': lab.status=='Tersedia',
+                                            'bg-red-300 text-gray-800': lab.status=='Maintenance',
+                                            'bg-yellow-300 text-gray-800': lab.status=='Digunakan'
+                                        }" x-text="lab.status"></span>
+                                </div>
                             </div>
 
                             <div class="p-4 flex flex-col flex-grow">
@@ -87,11 +87,17 @@
                                 <h3 class="text-xl font-semibold text-gray-800 group-hover:text-blue-600 transition leading-snug mb-3"
                                     x-text="lab.name"></h3>
 
-                                {{-- LOKASI (Gedung) --}}
-                                <p class="text-gray-600 text-sm flex items-center gap-1 mb-3">
-                                    <span class="material-symbols-outlined text-gray-500 text-base">location_on</span>
-                                    <span x-text="lab.lokasi"></span>
-                                </p>
+                                {{-- LOKASI & TIPE --}}
+                                <div class="space-y-1 mb-3">
+                                    <p class="text-gray-600 text-sm flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined text-gray-400 text-lg">location_on</span>
+                                        <span x-text="lab.lokasi"></span>
+                                    </p>
+                                    <p class="text-gray-600 text-sm flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined text-gray-400 text-lg">category</span>
+                                        <span class="capitalize" x-text="lab.type || '-'"></span>
+                                    </p>
+                                </div>
 
                                 {{-- INFORMASI P.J., KAPASITAS, DAN PRODI (di dalam box latar belakang) --}}
                                 <div class="bg-gray-50 rounded-lg p-3 space-y-2 flex-grow">
@@ -127,27 +133,27 @@
                                     </div>
                                 </div>
 
-                                {{-- Catatan: Blok PRODI yang sebelumnya di luar box telah dihapus --}}
-
-
                                 {{-- AKSI TOMBOL --}}
                                 <div class="flex gap-2 mt-4 pt-3 border-t border-gray-100">
 
                                     {{-- EDIT Button (Full width) --}}
-                                    <button @click="openEditModal(lab)" class="flex items-center gap-2 text-blue-700 font-medium bg-blue-50 
-                                hover:bg-blue-100 
-                                px-4 py-2 rounded-lg transition w-full justify-center text-sm border border-blue-200">
+                                    <button type="button" @click.stop="openEditModal(lab)"
+                                        class="flex items-center gap-2 text-blue-700 font-medium bg-blue-50 
+                                        hover:bg-blue-100 hover:text-blue-800
+                                        px-4 py-2 rounded-lg transition-all duration-200 w-full justify-center text-sm border border-blue-200 shadow-sm active:scale-95">
                                         <span class="material-symbols-outlined text-lg">edit</span>
-                                        Edit
+                                        <span>Edit Lab</span>
                                     </button>
 
                                     {{-- DELETE Button (Icon only) --}}
                                     <form :action="`/labs/${lab.id}`" method="POST"
-                                        onsubmit="return confirm('Apakah Anda yakin ingin menghapus laboratorium ' + lab.name + '?')">
+                                        on_submit="return confirm('Apakah Anda yakin ingin menghapus laboratorium ' + lab.name + '?')"
+                                        class="flex-shrink-0">
                                         @csrf @method('DELETE')
 
-                                        <button class="text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 
-                                    p-2 rounded-lg transition border border-red-200 flex-shrink-0">
+                                        <button type="submit"
+                                            class="text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 
+                                            p-2 rounded-lg transition-all duration-200 border border-red-200 shadow-sm active:scale-95 flex items-center justify-center">
                                             <span class="material-symbols-outlined text-lg">delete</span>
                                         </button>
                                     </form>
@@ -167,197 +173,358 @@
 
 
         {{-- ================= MODAL CREATE ================= --}}
-        <div x-show="openCreate" x-transition:enter="ease-out duration-300"
-            x-transition:enter-start="opacity-0 scale-90" x-transition:enter-end="opacity-100 scale-100"
-            x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 scale-100"
-            x-transition:leave-end="opacity-0 scale-90"
-            class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+        <div x-show="openCreate" x-cloak x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 backdrop-blur-0" x-transition:enter-end="opacity-100 backdrop-blur-sm"
+            x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 backdrop-blur-sm"
+            x-transition:leave-end="opacity-0 backdrop-blur-0"
+            class="fixed inset-0 bg-gray-900/60 flex items-center justify-center z-[60] p-4">
 
-            <div @click.outside="openCreate = false" class="bg-white w-[34rem] p-6 rounded-xl shadow-lg">
+            <div @click.outside="openCreate = false" x-show="openCreate"
+                x-transition:enter="transition ease-out duration-300 delay-75"
+                x-transition:enter-start="opacity-0 scale-95 translate-y-4"
+                x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                x-transition:leave="transition ease-in duration-200"
+                x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                x-transition:leave-end="opacity-0 scale-95 translate-y-4"
+                class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden">
 
-                <h2 class="text-xl font-bold mb-4">Tambah Laboratorium Baru</h2>
+                {{-- Header Modal --}}
+                <div class="px-6 py-3 border-b border-gray-100 flex items-center justify-between bg-blue-50/50">
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-800">Tambah Laboratorium</h2>
+                    </div>
+                    <button @click="openCreate = false"
+                        class="text-gray-400 hover:text-gray-600 transition p-1 rounded-full hover:bg-gray-100">
+                        <span class="material-symbols-outlined text-xl">close</span>
+                    </button>
+                </div>
 
-                <form action="{{ route('labs.store') }}" method="POST" enctype="multipart/form-data">
+                <form action="{{ route('labs.store') }}" method="POST" enctype="multipart/form-data" class="px-6 py-4">
                     @csrf
 
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block">Nama Lab</label>
-                            <input name="name" class="w-full border p-2 rounded mb-3">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
+                        {{-- Nama Lab --}}
+                        <div class="space-y-1">
+                            <label class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Nama
+                                Laboratorium</label>
+                            <input name="name" required placeholder="Contoh: Lab Komputer 1"
+                                class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm">
                         </div>
 
-                        <div>
-                            <label class="block">Kode Lab</label>
-                            <input name="kode_lab" class="w-full border p-2 rounded mb-3">
+                        {{-- Kode Lab --}}
+                        <div class="space-y-1">
+                            <label class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Kode
+                                Lab</label>
+                            <input name="kode_lab" required placeholder="Contoh: LK-01"
+                                class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm">
                         </div>
-                    </div>
 
-                    <div class="grid grid-cols-2 gap-3">
+                        {{-- Prodi (khusus superadmin) --}}
                         @if(auth()->user()->role === 'superadmin')
-                            <div class="relative">
-                                <label class="block">Prodi</label>
-                                {{-- Input ID tersembunyi --}}
+                            <div class="space-y-1 relative md:col-span-2" x-show="newType === 'praktikum'" x-transition>
+                                <label class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Program
+                                    Studi</label>
                                 <input type="hidden" name="prodi_id" x-model="selectedProdiId">
-
-                                {{-- Input Pencarian Nama --}}
-                                <input type="text" class="w-full border p-2 rounded mb-3" x-model="searchProdi"
-                                    @input="filterProdi()" @focus="filterProdi()" placeholder="Ketik nama prodi..."
-                                    autocomplete="off">
-
+                                <div class="relative">
+                                    <span
+                                        class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">school</span>
+                                    <input type="text" x-model="searchProdi" @input="filterProdi()" @focus="filterProdi()"
+                                        placeholder="Cari program studi..." autocomplete="off"
+                                        class="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm">
+                                </div>
                                 <ul x-show="filteredProdi.length > 0" @click.outside="filteredProdi = []"
-                                    class="absolute z-50 bg-white border w-full rounded shadow max-h-32 overflow-y-auto">
+                                    class="absolute z-[70] bg-white border border-gray-200 mt-1 w-full rounded-xl shadow-xl max-h-48 overflow-y-auto py-2 divide-y divide-gray-50">
                                     <template x-for="item in filteredProdi" :key="item.id">
                                         <li @click="selectProdi(item)"
-                                            class="px-3 py-2 hover:bg-blue-600 hover:text-white cursor-pointer text-sm"
-                                            x-text="item.name"></li>
+                                            class="px-4 py-2.5 hover:bg-blue-50 cursor-pointer transition flex items-center justify-between group">
+                                            <span class="text-gray-700 group-hover:text-blue-700 font-medium"
+                                                x-text="item.name"></span>
+                                            <span
+                                                class="material-symbols-outlined text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity">check_circle</span>
+                                        </li>
                                     </template>
                                 </ul>
                             </div>
-                        @else
-                            {{-- Admin Biasa: Prodi otomatis di backend, tidak perlu input --}}
                         @endif
 
-
-                        <div>
-                            <label class="block">Kapasitas</label>
-                            <input type="number" name="kapasitas" class="w-full border p-2 rounded mb-3">
+                        {{-- Kapasitas --}}
+                        <div class="space-y-1">
+                            <label
+                                class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Kapasitas</label>
+                            <div class="relative">
+                                <span
+                                    class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">groups</span>
+                                <input type="number" name="kapasitas" required placeholder="0"
+                                    class="w-full pl-10 pr-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm">
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block">Lokasi</label>
-                            <input name="lokasi" class="w-full border p-2 rounded mb-3">
+                        {{-- Tipe Lab --}}
+                        <div class="space-y-1">
+                            <label class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Tipe
+                                Lab</label>
+                            <select name="type" required x-model="newType"
+                                class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm appearance-none">
+                                <option value="praktikum">Praktikum</option>
+                                <option value="pengujian">Pengujian</option>
+                                <option value="sewa">Sewa</option>
+                            </select>
                         </div>
 
-                        <div>
-                            <label class="block">Status</label>
-                            <select name="status" class="w-full border p-2 rounded mb-3">
+                        {{-- Lokasi --}}
+                        <div class="space-y-1 md:col-span-2">
+                            <label class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Lokasi /
+                                Gedung</label>
+                            <div class="relative">
+                                <span
+                                    class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">apartment</span>
+                                <input name="lokasi" required placeholder="Gedung A, Lantai 2"
+                                    class="w-full pl-10 pr-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm">
+                            </div>
+                        </div>
+
+                        {{-- Penanggung Jawab --}}
+                        <div class="space-y-1">
+                            <label
+                                class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Penanggung
+                                Jawab</label>
+                            <div class="relative">
+                                <span
+                                    class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">person</span>
+                                <input name="pj" required placeholder="Nama Lengkap"
+                                    class="w-full pl-10 pr-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm">
+                            </div>
+                        </div>
+
+                        {{-- Status --}}
+                        <div class="space-y-1">
+                            <label
+                                class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Status</label>
+                            <select name="status" required
+                                class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm appearance-none">
                                 <option value="Tersedia">Tersedia</option>
                                 <option value="Digunakan">Digunakan</option>
                                 <option value="Maintenance">Maintenance</option>
                             </select>
                         </div>
+
+                        {{-- Foto Lab --}}
+                        <div class="space-y-1 md:col-span-2">
+                            <label class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Foto
+                                Lab</label>
+                            <div
+                                class="mt-0.5 flex justify-center px-4 py-3 border-2 border-gray-300 border-dashed rounded-lg hover:border-blue-400 transition-colors bg-gray-50">
+                                <div class="space-y-0.5 text-center">
+                                    <span class="material-symbols-outlined text-2xl text-gray-400">image</span>
+                                    <div class="flex text-xs text-gray-600">
+                                        <label
+                                            class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
+                                            <span>Upload file</span>
+                                            <input name="foto" type="file" class="sr-only" accept="image/*">
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <label class="block">Penanggung Jawab</label>
-                    <input name="pj" class="w-full border p-2 rounded mb-3">
-
-                    <label class="block">Foto Lab</label>
-                    <input type="file" name="foto" accept="image/*" class="w-full border p-2 rounded mb-3">
-
-                    <div class="flex justify-end gap-2 mt-4">
-                        <button type="button" @click="openCreate = false" class="px-4 py-2 bg-gray-300 rounded">
+                    <div class="flex justify-end gap-3 mt-4">
+                        <button type="button" @click="openCreate = false"
+                            class="px-5 py-2 text-sm text-gray-600 font-semibold hover:bg-gray-100 rounded-lg transition">
                             Batal
                         </button>
-
-                        <button class="px-4 py-2 bg-blue-600 text-white rounded">
-                            Simpan
+                        <button type="submit"
+                            class="px-6 py-2 text-sm bg-blue-600 text-white font-bold rounded-lg shadow-md hover:bg-blue-700 transition active:scale-95">
+                            Simpan Lab
                         </button>
                     </div>
-
                 </form>
-
             </div>
         </div>
 
 
 
         {{-- ================= MODAL EDIT ================= --}}
-        <div x-show="openEdit" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 scale-90"
-            x-transition:enter-end="opacity-100 scale-100" x-transition:leave="ease-in duration-200"
-            x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-90"
-            class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+        <div x-show="openEdit" x-cloak x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 backdrop-blur-0" x-transition:enter-end="opacity-100 backdrop-blur-sm"
+            x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 backdrop-blur-sm"
+            x-transition:leave-end="opacity-0 backdrop-blur-0"
+            class="fixed inset-0 bg-gray-900/60 flex items-center justify-center z-[60] p-4">
 
-            <div @click.outside="openEdit = false" class="bg-white w-[34rem] p-6 rounded-xl shadow-lg">
+            <div @click.outside="openEdit = false" x-show="openEdit"
+                x-transition:enter="transition ease-out duration-300 delay-75"
+                x-transition:enter-start="opacity-0 scale-95 translate-y-4"
+                x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                x-transition:leave="transition ease-in duration-200"
+                x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                x-transition:leave-end="opacity-0 scale-95 translate-y-4"
+                class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden">
 
-                <h2 class="text-xl font-bold mb-4">Edit Laboratorium</h2>
+                {{-- Header Modal --}}
+                <div class="px-6 py-3 border-b border-gray-100 flex items-center justify-between bg-blue-50/50">
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-800">Edit Laboratorium</h2>
+                    </div>
+                    <button @click="openEdit = false"
+                        class="text-gray-400 hover:text-gray-600 transition p-1 rounded-full hover:bg-gray-100">
+                        <span class="material-symbols-outlined text-xl">close</span>
+                    </button>
+                </div>
 
-                <form :action="`/labs/${editData.id}`" method="POST" enctype="multipart/form-data">
+                <form :action="`/labs/${editData.id}`" method="POST" enctype="multipart/form-data" class="px-6 py-4">
                     @csrf @method('PUT')
 
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block">Nama Lab</label>
-                            <input name="name" x-model="editData.name" class="w-full border p-2 rounded mb-3">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
+                        {{-- Nama Lab --}}
+                        <div class="space-y-1">
+                            <label class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Nama
+                                Laboratorium</label>
+                            <input name="name" x-model="editData.name" required placeholder="Contoh: Lab Komputer 1"
+                                class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm">
                         </div>
 
-                        <div>
-                            <label class="block">Kode Lab</label>
-                            <input name="kode_lab" x-model="editData.kode_lab" class="w-full border p-2 rounded mb-3">
+                        {{-- Kode Lab --}}
+                        <div class="space-y-1">
+                            <label class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Kode
+                                Lab</label>
+                            <input name="kode_lab" x-model="editData.kode_lab" required placeholder="Contoh: LK-01"
+                                class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm">
                         </div>
-                    </div>
 
-                    <div class="grid grid-cols-2 gap-3">
+                        {{-- Prodi (khusus superadmin) --}}
                         @if(auth()->user()->role === 'superadmin')
-                            <div class="relative">
-                                <label class="block">Prodi</label>
+                            <div class="space-y-1 relative md:col-span-2" x-show="editData.type === 'praktikum'"
+                                x-transition>
+                                <label class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Program
+                                    Studi</label>
                                 <input type="hidden" name="prodi_id" x-model="editData.prodi_id">
-
-                                <input type="text" class="w-full border p-2 rounded mb-3" x-model="editData.prodi"
-                                    @input="filterProdi(true)" @focus="filterProdi(true)" placeholder="Ketik nama prodi..."
-                                    autocomplete="off">
-
+                                <div class="relative">
+                                    <span
+                                        class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">school</span>
+                                    <input type="text" x-model="editData.prodi" @input="filterProdi(true)"
+                                        @focus="filterProdi(true)" placeholder="Cari program studi..." autocomplete="off"
+                                        class="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm">
+                                </div>
                                 <ul x-show="filteredProdi.length > 0" @click.outside="filteredProdi = []"
-                                    class="absolute z-50 bg-white border w-full rounded shadow max-h-32 overflow-y-auto">
+                                    class="absolute z-[70] bg-white border border-gray-200 mt-1 w-full rounded-xl shadow-xl max-h-48 overflow-y-auto py-2 divide-y divide-gray-50">
                                     <template x-for="item in filteredProdi" :key="item.id">
                                         <li @click="selectProdi(item, true)"
-                                            class="px-3 py-2 hover:bg-blue-600 hover:text-white cursor-pointer text-sm"
-                                            x-text="item.name"></li>
+                                            class="px-4 py-2.5 hover:bg-blue-50 cursor-pointer transition flex items-center justify-between group">
+                                            <span class="text-gray-700 group-hover:text-blue-700 font-medium"
+                                                x-text="item.name"></span>
+                                            <span
+                                                class="material-symbols-outlined text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity">check_circle</span>
+                                        </li>
                                     </template>
                                 </ul>
                             </div>
                         @endif
 
-
-                        <div>
-                            <label class="block">Kapasitas</label>
-                            <input name="kapasitas" x-model="editData.kapasitas" type="number"
-                                class="w-full border p-2 rounded mb-3">
+                        {{-- Kapasitas --}}
+                        <div class="space-y-1">
+                            <label
+                                class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Kapasitas</label>
+                            <div class="relative">
+                                <span
+                                    class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">groups</span>
+                                <input type="number" name="kapasitas" x-model="editData.kapasitas" required
+                                    placeholder="0"
+                                    class="w-full pl-10 pr-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm">
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block">Lokasi</label>
-                            <input name="lokasi" x-model="editData.lokasi" class="w-full border p-2 rounded mb-3">
+                        {{-- Tipe Lab --}}
+                        <div class="space-y-1">
+                            <label class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Tipe
+                                Lab</label>
+                            <select name="type" x-model="editData.type" required
+                                class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm appearance-none">
+                                <option value="praktikum">Praktikum</option>
+                                <option value="pengujian">Pengujian</option>
+                                <option value="sewa">Sewa</option>
+                            </select>
                         </div>
 
-                        <div>
-                            <label class="block">Status</label>
-                            <select name="status" x-model="editData.status" class="w-full border p-2 rounded mb-3">
+                        {{-- Lokasi --}}
+                        <div class="space-y-1 md:col-span-2">
+                            <label class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Lokasi /
+                                Gedung</label>
+                            <div class="relative">
+                                <span
+                                    class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">apartment</span>
+                                <input name="lokasi" x-model="editData.lokasi" required placeholder="Gedung A, Lantai 2"
+                                    class="w-full pl-10 pr-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm">
+                            </div>
+                        </div>
+
+                        {{-- Penanggung Jawab --}}
+                        <div class="space-y-1">
+                            <label class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">P.
+                                Jawab</label>
+                            <div class="relative">
+                                <span
+                                    class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">person</span>
+                                <input name="pj" x-model="editData.pj" required placeholder="Nama Lengkap"
+                                    class="w-full pl-10 pr-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm">
+                            </div>
+                        </div>
+
+                        {{-- Status --}}
+                        <div class="space-y-1">
+                            <label
+                                class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Status</label>
+                            <select name="status" x-model="editData.status" required
+                                class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm appearance-none">
                                 <option value="Tersedia">Tersedia</option>
                                 <option value="Digunakan">Digunakan</option>
                                 <option value="Maintenance">Maintenance</option>
                             </select>
                         </div>
+
+                        {{-- Foto Lab --}}
+                        <div class="space-y-1 md:col-span-2">
+                            <label class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Foto
+                                Lab</label>
+
+                            <template x-if="editData.foto">
+                                <div
+                                    class="mb-2 flex items-center gap-3 bg-blue-50 p-2 rounded-lg border border-blue-100">
+                                    <img :src="'/storage/' + editData.foto"
+                                        class="w-12 h-12 object-cover rounded shadow-sm">
+                                    <div class="text-[10px]">
+                                        <p class="font-semibold text-blue-800 uppercase tracking-tight">Foto Saat Ini
+                                        </p>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <div
+                                class="mt-0.5 flex justify-center px-4 py-2 border-2 border-gray-300 border-dashed rounded-lg hover:border-blue-400 transition-colors bg-gray-50">
+                                <div class="space-y-0.5 text-center">
+                                    <span class="material-symbols-outlined text-xl text-gray-400">upload_file</span>
+                                    <div class="flex text-xs text-gray-600 text-center justify-center">
+                                        <label
+                                            class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
+                                            <span>Upload baru</span>
+                                            <input name="foto" type="file" class="sr-only" accept="image/*">
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <label class="block">Penanggung Jawab</label>
-                    <input name="pj" x-model="editData.pj" class="w-full border p-2 rounded mb-3">
-
-                    <label class="block">Foto Baru (optional)</label>
-                    <input type="file" name="foto" accept="image/*" class="w-full border p-2 rounded mb-3">
-
-                    <template x-if="editData.foto">
-                        <div class="mt-1">
-                            <p class="text-sm text-gray-600">Foto saat ini:</p>
-                            <img :src="'/storage/' + editData.foto" class="w-40 h-28 object-cover rounded border mt-1">
-                        </div>
-                    </template>
-
-                    <div class="flex justify-end gap-2 mt-4">
-                        <button type="button" @click="openEdit = false" class="px-4 py-2 bg-gray-300 rounded">
+                    <div class="flex justify-end gap-3 mt-4">
+                        <button type="button" @click="openEdit = false"
+                            class="px-5 py-2 text-sm text-gray-600 font-semibold hover:bg-gray-100 rounded-lg transition">
                             Batal
                         </button>
-
-                        <button class="px-4 py-2 bg-blue-600 text-white rounded">
-                            Update
+                        <button type="submit"
+                            class="px-6 py-2 text-sm bg-blue-600 text-white font-bold rounded-lg shadow-md hover:bg-blue-700 transition active:scale-95">
+                            Update Lab
                         </button>
                     </div>
-
                 </form>
-
             </div>
         </div>
 
@@ -373,6 +540,7 @@
             return {
                 openCreate: false,
                 openEdit: false,
+                newType: "praktikum", // State untuk input tipe lab baru
                 keyword: "",
                 loading: false,
 

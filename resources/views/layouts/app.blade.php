@@ -76,22 +76,25 @@
         </main>
     </div>
 
-    <style>
-        @keyframes fade-in-down {
-            0% {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
+    [x-cloak] {
+    display: none !important;
+    }
 
-            100% {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
+    @keyframes fade-in-down {
+    0% {
+    opacity: 0;
+    transform: translateY(-10px);
+    }
 
-        .animate-fade-in-down {
-            animation: fade-in-down 0.5s ease-out forwards;
-        }
+    100% {
+    opacity: 1;
+    transform: translateY(0);
+    }
+    }
+
+    .animate-fade-in-down {
+    animation: fade-in-down 0.5s ease-out forwards;
+    }
     </style>
 
     @stack('scripts')
