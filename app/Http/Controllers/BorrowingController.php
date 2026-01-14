@@ -18,8 +18,16 @@ class BorrowingController extends Controller
 
         if ($user->role !== 'superadmin') {
             $borrowingsQuery->whereHas('lab', function ($q) use ($user) {
-                $q->where('prodi_id', $user->prodi_id);
+                if ($user->lab_id) {
+                    $q->where('id', $user->lab_id);
+                } elseif ($user->prodi_id) {
+                    $q->where('prodi_id', $user->prodi_id);
+                }
             });
+        }
+
+        if (request()->has('status') && request('status') !== 'all') {
+            $borrowingsQuery->where('status', request('status'));
         }
 
         $borrowings = $borrowingsQuery->get();
@@ -31,12 +39,25 @@ class BorrowingController extends Controller
 
         $labs = [];
         if ($user->role === 'admin') {
-            $labs = Lab::where('prodi_id', $user->prodi_id)->with('assets')->get();
+            if ($user->lab_id) {
+                $labs = Lab::where('id', $user->lab_id)->with('assets')->get();
+            } elseif ($user->prodi_id) {
+                $labs = Lab::where('prodi_id', $user->prodi_id)->with('assets')->get();
+            }
         } elseif ($user->role === 'superadmin') {
             $labs = Lab::with('assets')->get();
         }
 
-        return view('borrowings.index', compact('borrowings', 'labs', 'prodis'));
+        // Fetch return dates for markers
+        $returnDates = $borrowingsQuery->clone()
+            ->reorder()
+            ->whereIn('status', ['pending', 'approved'])
+            ->selectRaw('DISTINCT return_date')
+            ->pluck('return_date')
+            ->map(fn($d) => \Carbon\Carbon::parse($d)->format('Y-m-d'))
+            ->toArray();
+
+        return view('borrowings.index', compact('borrowings', 'labs', 'prodis', 'returnDates'));
     }
 
     public function store(Request $request)

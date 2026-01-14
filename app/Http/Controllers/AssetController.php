@@ -35,7 +35,15 @@ class AssetController extends Controller
         }
         $assets = $assetQuery->get();
 
-        return view('assets.index', compact('labs', 'assets'));
+        // Fetch return dates for markers
+        $returnDates = \App\Models\Borrowing::whereIn('status', ['pending', 'approved'])
+            ->whereIn('lab_id', $labs->pluck('id'))
+            ->selectRaw('DISTINCT return_date')
+            ->pluck('return_date')
+            ->map(fn($d) => \Carbon\Carbon::parse($d)->format('Y-m-d'))
+            ->toArray();
+
+        return view('assets.index', compact('labs', 'assets', 'returnDates'));
     }
 
     /**
