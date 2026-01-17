@@ -45,4 +45,17 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Lab::class, 'lab_id');
     }
+
+    public function hasRentalAccess()
+    {
+        if ($this->role === 'superadmin') {
+            return true;
+        }
+
+        if ($this->role === 'admin' && $this->lab_id) {
+            return $this->lab && $this->lab->type === 'sewa';
+        }
+
+        return false;
+    }
 }

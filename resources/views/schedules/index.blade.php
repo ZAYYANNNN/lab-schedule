@@ -5,45 +5,8 @@
         selectedSchedule: null,
         editMode: {{ old('_method') === 'PUT' ? 'true' : 'false' }},
         formAction: '{{ old('_method') === 'PUT' ? url('/schedules/' . old('id')) : route('schedules.store') }}',
-        prodi_id: '{{ old('prodi_id') }}',
         
-        {{-- Checkbox Logic Data --}}
-        prodiLabs: {
-            @foreach($allProdis as $prodi)
-                '{{ $prodi->id }}': [{!! $prodi->labs->pluck('id')->map(fn($id) => "'$id'")->join(',') !!}],
-            @endforeach
-        },
         selectedLabs: [{!! implode(',', array_map(fn($id) => "'$id'", $selectedLabIds)) !!}],
-        selectedProdis: [{!! implode(',', array_map(fn($id) => "'$id'", $selectedProdiIds)) !!}],
-
-        toggleProdi(prodiId) {
-            const labs = this.prodiLabs[prodiId] || [];
-            if (this.selectedProdis.includes(prodiId)) {
-                // Check all child labs
-                labs.forEach(labId => {
-                    if (!this.selectedLabs.includes(labId)) this.selectedLabs.push(labId);
-                });
-            } else {
-                // Uncheck all child labs
-                this.selectedLabs = this.selectedLabs.filter(id => !labs.includes(id));
-            }
-            this.$nextTick(() => document.getElementById('filterForm').submit());
-        },
-
-        toggleLab(labId, prodiId) {
-            const labs = this.prodiLabs[prodiId] || [];
-            if (!this.selectedLabs.includes(labId)) {
-                // If a lab is unchecked, the prodi must be unchecked
-                this.selectedProdis = this.selectedProdis.filter(id => id != prodiId);
-            } else {
-                // If all labs are checked, the prodi should be checked
-                const allSelected = labs.every(id => this.selectedLabs.includes(id));
-                if (allSelected && !this.selectedProdis.includes(prodiId)) {
-                    this.selectedProdis.push(prodiId);
-                }
-            }
-            this.$nextTick(() => document.getElementById('filterForm').submit());
-        },
 
         formData: {
             id: '{{ old('id') }}',
@@ -57,7 +20,6 @@
             this.editMode = false;
             this.formAction = '{{ route('schedules.store') }}';
             this.formData = { id: '', lab_id: '', activity: '', date: '{{ $selectedDate }}', start_time: '', end_time: '' };
-            this.prodi_id = '';
             this.showModal = true;
         },
         openDetailModal(schedule) {
@@ -92,7 +54,6 @@
                 start_time: schedule.start_time.substring(0, 5),
                 end_time: schedule.end_time.substring(0, 5)
             };
-            this.prodi_id = schedule.lab?.prodi_id || '';
             this.showModal = true;
         }
     }">
@@ -250,75 +211,44 @@
                     </div>
 
                     {{-- PRODI/LAB FILTERS --}}
-                    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
-                        <h3 class="text-sm font-bold text-gray-800 mb-4 flex items-center">
-                            <span class="material-symbols-outlined text-blue-600 mr-2 text-[20px]">
-                                {{ auth()->user()->role === 'superadmin' ? 'account_tree' : 'meeting_room' }}
-                            </span>
-                            {{ auth()->user()->role === 'superadmin' ? 'Filter Prodi & Lab' : 'Filter Lab' }}
-                        </h3>
+                    <h3 class="text-sm font-bold text-gray-800 mb-4 flex items-center">
+                        <span class="material-symbols-outlined text-blue-600 mr-2 text-[20px]">
+                            meeting_room
+                        </span>
+                        Filter Lab
+                    </h3>
 
-                        <div class="space-y-4 max-h-[400px] overflow-y-auto pr-2 scrollbar-thin">
-                            @if(auth()->user()->role === 'superadmin')
-                                @foreach($allProdis as $prodi)
-                                    <div x-data="{ open: {{ in_array($prodi->id, $selectedProdiIds) ? 'true' : 'false' }} }" class="group">
-                                        <div class="flex items-center justify-between p-3 rounded-2xl transition hover:bg-slate-50 border border-transparent hover:border-slate-100">
-                                            <label class="flex items-center cursor-pointer flex-1">
-                                                <input type="checkbox" name="prodi_ids[]" value="{{ $prodi->id }}"
-                                                    x-model="selectedProdis" @change="toggleProdi('{{ $prodi->id }}')"
-                                                    class="w-5 h-5 rounded-lg border-slate-200 text-blue-600 focus:ring-blue-500 shadow-sm transition-all">
-                                                <span class="ml-3 text-sm font-bold text-slate-700 group-hover:text-blue-600 transition">{{ $prodi->name }}</span>
-                                            </label>
-                                            <button @click="open = !open" type="button" 
-                                                class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:bg-white hover:text-blue-600 shadow-sm transition-all border border-transparent hover:border-slate-100">
-                                                <span class="material-symbols-outlined text-lg transition-transform duration-300" 
-                                                    :class="open ? 'rotate-180' : ''">expand_more</span>
-                                            </button>
-                                        </div>
-
-                                        <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0"
-                                            class="ml-8 mt-2 space-y-2 border-l-2 border-slate-100 pl-4 py-1">
-                                            @foreach($prodi->labs as $lab)
-                                                <label class="flex items-center cursor-pointer group/lab p-1 rounded-lg hover:bg-slate-50 transition-colors">
-                                                    <input type="checkbox" name="lab_ids[]" value="{{ $lab->id }}"
-                                                        x-model="selectedLabs" @change="toggleLab('{{ $lab->id }}', '{{ $prodi->id }}')"
-                                                        class="w-4 h-4 rounded-md border-slate-200 text-blue-500 focus:ring-blue-400 shadow-sm transition-all">
-                                                    <span class="ml-2.5 text-[13px] font-medium text-slate-500 group-hover/lab:text-blue-500 transition">{{ $lab->name }}</span>
-                                                </label>
-                                            @endforeach
-                                        </div>
-                                    </div>
-                                @endforeach
-                            @else
-                                <div class="space-y-2">
-                                    @foreach($allLabs as $lab)
-                                        <label class="flex items-center cursor-pointer group p-2.5 hover:bg-blue-50/50 rounded-2xl border border-transparent hover:border-blue-100 transition-all duration-300">
-                                            <input type="checkbox" name="lab_ids[]" value="{{ $lab->id }}"
-                                                x-model="selectedLabs" @change="document.getElementById('filterForm').submit()"
-                                                class="w-5 h-5 rounded-lg border-slate-200 text-blue-600 focus:ring-blue-500 shadow-sm transition-all">
-                                            <span class="ml-3 text-sm font-bold text-slate-700 group-hover:text-blue-600 transition">{{ $lab->name }}</span>
-                                        </label>
-                                    @endforeach
-                                </div>
-                            @endif
+                    <div class="space-y-4 max-h-[400px] overflow-y-auto pr-2 scrollbar-thin">
+                        <div class="space-y-2">
+                            @foreach($allLabs as $lab)
+                                <label
+                                    class="flex items-center cursor-pointer group p-2.5 hover:bg-blue-50/50 rounded-2xl border border-transparent hover:border-blue-100 transition-all duration-300">
+                                    <input type="checkbox" name="lab_ids[]" value="{{ $lab->id }}" x-model="selectedLabs"
+                                        @change="document.getElementById('filterForm').submit()"
+                                        class="w-5 h-5 rounded-lg border-slate-200 text-blue-600 focus:ring-blue-500 shadow-sm transition-all">
+                                    <span
+                                        class="ml-3 text-sm font-bold text-slate-700 group-hover:text-blue-600 transition">{{ $lab->name }}</span>
+                                </label>
+                            @endforeach
                         </div>
-
-                        @if(!empty($selectedProdiIds) || !empty($selectedLabIds))
-                            <div class="mt-8 pt-6 border-t border-slate-100">
-                                <a href="{{ route('schedules.index', ['date' => $selectedDate]) }}"
-                                    class="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-slate-50 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition-all font-black text-[10px] uppercase tracking-[0.2em] border border-slate-100 hover:border-rose-100">
-                                    <span class="material-symbols-outlined text-[18px]">restart_alt</span>
-                                    Reset Semua Filter
-                                </a>
-                            </div>
-                        @endif
                     </div>
+
+                    @if(!empty($selectedProdiIds) || !empty($selectedLabIds))
+                        <div class="mt-8 pt-6 border-t border-slate-100">
+                            <a href="{{ route('schedules.index', ['date' => $selectedDate]) }}"
+                                class="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-slate-50 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition-all font-black text-[10px] uppercase tracking-[0.2em] border border-slate-100 hover:border-rose-100">
+                                <span class="material-symbols-outlined text-[18px]">restart_alt</span>
+                                Reset Semua Filter
+                            </a>
+                        </div>
+                    @endif
                 </form>
             </aside>
 
             {{-- MAIN BOARD --}}
             <div class="flex-1 min-w-0 min-h-[700px]">
-                <div class="bg-white rounded-[2.5rem] shadow-2xl shadow-slate-200/40 border border-slate-100 overflow-hidden ring-1 ring-slate-100/50">
+                <div
+                    class="bg-white rounded-[2.5rem] shadow-2xl shadow-slate-200/40 border border-slate-100 overflow-hidden ring-1 ring-slate-100/50">
                     <div class="overflow-auto scrollbar-none" style="max-height: 850px;">
                         @php
                             $labCount = count($labs);
@@ -327,36 +257,45 @@
                         @endphp
 
                         <div class="grid relative bg-white" style="grid-template-columns: {{ $gridCols }}; 
-                                    grid-template-rows: 70px repeat({{ $totalSlots }}, 1.25rem);">
+                                            grid-template-rows: 70px repeat({{ $totalSlots }}, 1.25rem);">
 
                             {{-- 1. HEADER WAKTU (POJOK) --}}
-                            <div class="sticky top-0 left-0 z-[50] bg-slate-50/80 border-r border-b border-white-800 flex items-center justify-center text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] shadow-lg">
+                            <div
+                                class="sticky top-0 left-0 z-[50] bg-slate-50/80 border-r border-b border-white-800 flex items-center justify-center text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] shadow-lg">
                                 Waktu
                             </div>
 
                             {{-- 2. HEADER NAMA LAB --}}
                             @if($labCount > 0)
                                 @foreach($labs as $lab)
-                                    <div class="sticky top-0 z-[40] bg-white/95 backdrop-blur-xl px-8 py-3 border-r border-b border-slate-100 flex flex-col justify-center shadow-sm">
+                                    <div
+                                        class="sticky top-0 z-[40] bg-white/95 backdrop-blur-xl px-8 py-3 border-r border-b border-slate-100 flex flex-col justify-center shadow-sm">
                                         <div class="flex items-center gap-2 mb-1">
                                             <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
                                             <h3 class="font-black text-slate-800 text-[13px] uppercase tracking-tight truncate">
                                                 {{ $lab->name }}
                                             </h3>
                                         </div>
-                                        <p class="text-[9px] text-blue-500 font-bold uppercase tracking-widest opacity-60 truncate">
+                                        <p
+                                            class="text-[9px] text-blue-500 font-bold uppercase tracking-widest opacity-60 truncate">
                                             {{ is_object($lab->prodi) ? $lab->prodi->name : ($lab->prodi ?? '-') }}
                                         </p>
                                     </div>
                                 @endforeach
                             @else
-                                <div class="sticky top-0 z-[40] bg-slate-50/50 backdrop-blur-sm border-b border-slate-100 flex items-center justify-center text-slate-400 p-12 text-center col-start-2">
+                                <div
+                                    class="sticky top-0 z-[40] bg-slate-50/50 backdrop-blur-sm border-b border-slate-100 flex items-center justify-center text-slate-400 p-12 text-center col-start-2">
                                     <div class="flex flex-col items-center">
-                                        <div class="w-20 h-20 rounded-3xl bg-white shadow-xl flex items-center justify-center text-slate-200 mb-6">
+                                        <div
+                                            class="w-20 h-20 rounded-3xl bg-white shadow-xl flex items-center justify-center text-slate-200 mb-6">
                                             <span class="material-symbols-outlined text-5xl">inventory_2</span>
                                         </div>
-                                        <h4 class="text-slate-800 font-black text-lg mb-2 leading-none uppercase tracking-widest">Tidak Ada Data</h4>
-                                        <p class="text-sm font-medium text-slate-400 max-w-[250px]">Pilih Program Studi atau Lab untuk melihat timeline kegiatan.</p>
+                                        <h4
+                                            class="text-slate-800 font-black text-lg mb-2 leading-none uppercase tracking-widest">
+                                            Tidak Ada Data</h4>
+                                        <p class="text-sm font-medium text-slate-400 max-w-[250px]">Pilih Program Studi atau
+                                            Lab
+                                            untuk melihat timeline kegiatan.</p>
                                     </div>
                                 </div>
                             @endif
@@ -370,8 +309,10 @@
                                 </div>
 
                                 {{-- Horizontal Lines --}}
-                                <div class="col-start-2 col-end-[-1] border-b border-slate-100" style="grid-row: {{ ($i * 4) + 2 }};"></div>
-                                <div class="col-start-2 col-end-[-1] border-b border-slate-50 border-dashed" style="grid-row: {{ ($i * 4) + 4 }};"></div>
+                                <div class="col-start-2 col-end-[-1] border-b border-slate-100"
+                                    style="grid-row: {{ ($i * 4) + 2 }};"></div>
+                                <div class="col-start-2 col-end-[-1] border-b border-slate-50 border-dashed"
+                                    style="grid-row: {{ ($i * 4) + 4 }};"></div>
                             @endfor
 
                             {{-- 4. ITEMS JADWAL --}}
@@ -379,7 +320,8 @@
                                 @foreach($schedules as $schedule)
                                     @php
                                         $labIndex = $labs->search(fn($l) => $l->id === $schedule->lab_id);
-                                        if ($labIndex === false) continue;
+                                        if ($labIndex === false)
+                                            continue;
 
                                         $start = \Carbon\Carbon::parse($schedule->start_time);
                                         $end = \Carbon\Carbon::parse($schedule->end_time);
@@ -388,33 +330,42 @@
                                         $startRow = $startSlot + 2;
                                         $span = max(1, $endSlot - $startSlot);
                                         $colIndex = $labIndex + 2;
-                                        
+
                                         $lab = $labs[$labIndex];
                                         $theme = getProdiTheme($lab->prodi);
                                     @endphp
 
-                                    <div class="z-10 px-2 py-1" style="grid-column: {{ $colIndex }}; grid-row: {{ $startRow }} / span {{ $span }};">
+                                    <div class="z-10 px-2 py-1"
+                                        style="grid-column: {{ $colIndex }}; grid-row: {{ $startRow }} / span {{ $span }};">
                                         <div @click="openDetailModal({{ $schedule->toJson() }})"
                                             class="group h-full w-full rounded-2xl border-l-[6px] {{ $theme['border'] }} {{ $theme['bg'] }} p-4 flex flex-col justify-between shadow-xl shadow-slate-200/20 ring-1 ring-black/5 hover:scale-[1.02] transform transition-all duration-300 cursor-pointer overflow-hidden relative">
                                             {{-- Decorative Glow inside item --}}
-                                            <div class="absolute -right-4 -top-4 w-12 h-12 rounded-full opacity-10 blur-xl {{ $theme['icon'] }}"></div>
-                                            
+                                            <div
+                                                class="absolute -right-4 -top-4 w-12 h-12 rounded-full opacity-10 blur-xl {{ $theme['icon'] }}">
+                                            </div>
+
                                             <div class="relative z-10">
-                                                <h4 class="font-black text-[12px] leading-tight mb-2 tracking-tight uppercase {{ $theme['textBold'] }} line-clamp-2">
+                                                <h4
+                                                    class="font-black text-[12px] leading-tight mb-2 tracking-tight uppercase {{ $theme['textBold'] }} line-clamp-2">
                                                     {{ $schedule->activity }}
                                                 </h4>
-                                                <div class="flex items-center text-[10px] font-bold {{ $theme['textMuted'] }} opacity-80 mb-3 uppercase tracking-widest leading-none">
+                                                <div
+                                                    class="flex items-center text-[10px] font-bold {{ $theme['textMuted'] }} opacity-80 mb-3 uppercase tracking-widest leading-none">
                                                     <span class="material-symbols-outlined text-[14px] mr-1.5">school</span>
                                                     {{ $schedule->creator->name ?? 'Dosen Pengampu' }}
                                                 </div>
                                             </div>
-                                            <div class="flex items-center justify-between border-t {{ $theme['borderLight'] }} pt-3 mt-auto relative z-10">
-                                                <div class="flex items-center text-[10px] font-black {{ $theme['textBold'] }} opacity-90 uppercase tracking-[0.1em]">
+                                            <div
+                                                class="flex items-center justify-between border-t {{ $theme['borderLight'] }} pt-3 mt-auto relative z-10">
+                                                <div
+                                                    class="flex items-center text-[10px] font-black {{ $theme['textBold'] }} opacity-90 uppercase tracking-[0.1em]">
                                                     <span class="material-symbols-outlined text-[14px] mr-1.5">schedule</span>
                                                     {{ $start->format('H:i') }} - {{ $end->format('H:i') }}
                                                 </div>
-                                                <div class="w-6 h-6 rounded-lg bg-white/50 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <span class="material-symbols-outlined text-sm {{ $theme['icon'] }}">visibility</span>
+                                                <div
+                                                    class="w-6 h-6 rounded-lg bg-white/50 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <span
+                                                        class="material-symbols-outlined text-sm {{ $theme['icon'] }}">visibility</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -457,57 +408,76 @@
                     <template x-if="selectedSchedule">
                         <div class="p-8 sm:p-10 relative overflow-hidden">
                             {{-- Decorative Background --}}
-                            <div class="absolute top-0 right-0 w-32 h-32 bg-blue-50/50 rounded-full -mr-16 -mt-16 blur-2xl"></div>
+                            <div
+                                class="absolute top-0 right-0 w-32 h-32 bg-blue-50/50 rounded-full -mr-16 -mt-16 blur-2xl">
+                            </div>
 
                             <div class="flex justify-between items-start mb-8 relative z-10">
-                                <div :class="`w-16 h-16 rounded-2xl flex items-center justify-center shadow-inner ${getTheme(selectedSchedule.lab?.prodi).bg}`">
-                                    <span :class="`material-symbols-outlined text-3xl ${getTheme(selectedSchedule.lab?.prodi).icon}`">event_note</span>
+                                <div
+                                    :class="`w-16 h-16 rounded-2xl flex items-center justify-center shadow-inner ${getTheme(selectedSchedule.lab?.prodi).bg}`">
+                                    <span
+                                        :class="`material-symbols-outlined text-3xl ${getTheme(selectedSchedule.lab?.prodi).icon}`">event_note</span>
                                 </div>
                                 <button @click="showDetail = false"
                                     class="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-all flex items-center justify-center group">
-                                    <span class="material-symbols-outlined transition-transform group-hover:rotate-90">close</span>
+                                    <span
+                                        class="material-symbols-outlined transition-transform group-hover:rotate-90">close</span>
                                 </button>
                             </div>
 
                             <div class="mb-8 relative z-10">
-                                <h3 class="text-3xl font-black text-slate-900 leading-tight mb-2 tracking-tighter" x-text="selectedSchedule.activity"></h3>
+                                <h3 class="text-3xl font-black text-slate-900 leading-tight mb-2 tracking-tighter"
+                                    x-text="selectedSchedule.activity"></h3>
                                 <div class="flex items-center gap-3">
-                                    <p class="text-xs font-bold text-slate-400" x-text="'Oleh: ' + (selectedSchedule.creator?.name || 'Sistem')"></p>
+                                    <p class="text-xs font-bold text-slate-400"
+                                        x-text="'Oleh: ' + (selectedSchedule.creator?.name || 'Sistem')"></p>
                                     <span class="w-1 h-1 rounded-full bg-slate-200"></span>
                                     <template x-if="selectedSchedule.lab?.prodi">
-                                        <span :class="`inline-block px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-[0.15em] ${getTheme(selectedSchedule.lab?.prodi).bg100} ${getTheme(selectedSchedule.lab?.prodi).text700} border border-white`"
+                                        <span
+                                            :class="`inline-block px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-[0.15em] ${getTheme(selectedSchedule.lab?.prodi).bg100} ${getTheme(selectedSchedule.lab?.prodi).text700} border border-white`"
                                             x-text="(typeof selectedSchedule.lab.prodi === 'object') ? selectedSchedule.lab.prodi.name : selectedSchedule.lab.prodi"></span>
                                     </template>
                                 </div>
                             </div>
 
-                            <div class="space-y-4 bg-slate-50/50 rounded-[2rem] p-6 border border-slate-100 mb-8 relative z-10">
+                            <div
+                                class="space-y-4 bg-slate-50/50 rounded-[2rem] p-6 border border-slate-100 mb-8 relative z-10">
                                 <div class="flex items-center gap-4 text-slate-700">
-                                    <div class="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center text-blue-500 border border-slate-100">
+                                    <div
+                                        class="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center text-blue-500 border border-slate-100">
                                         <span class="material-symbols-outlined text-[20px]">meeting_room</span>
                                     </div>
                                     <div>
-                                        <p class="text-[9px] uppercase font-black text-slate-400 tracking-widest mb-0.5">Laboratorium</p>
-                                        <p class="text-[14px] font-black tracking-tight" x-text="selectedSchedule.lab?.name"></p>
+                                        <p
+                                            class="text-[9px] uppercase font-black text-slate-400 tracking-widest mb-0.5">
+                                            Laboratorium</p>
+                                        <p class="text-[14px] font-black tracking-tight"
+                                            x-text="selectedSchedule.lab?.name"></p>
                                     </div>
                                 </div>
                                 <div class="flex items-center gap-4 text-slate-700">
-                                    <div class="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center text-indigo-500 border border-slate-100">
+                                    <div
+                                        class="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center text-indigo-500 border border-slate-100">
                                         <span class="material-symbols-outlined text-[20px]">calendar_today</span>
                                     </div>
                                     <div>
-                                        <p class="text-[9px] uppercase font-black text-slate-400 tracking-widest mb-0.5">Hari & Tanggal</p>
+                                        <p
+                                            class="text-[9px] uppercase font-black text-slate-400 tracking-widest mb-0.5">
+                                            Hari & Tanggal</p>
                                         <p class="text-[14px] font-black tracking-tight"
                                             x-text="new Date(selectedSchedule.date).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })">
                                         </p>
                                     </div>
                                 </div>
                                 <div class="flex items-center gap-4 text-slate-700">
-                                    <div class="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center text-emerald-500 border border-slate-100">
+                                    <div
+                                        class="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center text-emerald-500 border border-slate-100">
                                         <span class="material-symbols-outlined text-[20px]">schedule</span>
                                     </div>
                                     <div>
-                                        <p class="text-[9px] uppercase font-black text-slate-400 tracking-widest mb-0.5">Alokasi Waktu</p>
+                                        <p
+                                            class="text-[9px] uppercase font-black text-slate-400 tracking-widest mb-0.5">
+                                            Alokasi Waktu</p>
                                         <p class="text-[14px] font-black tracking-tight"
                                             x-text="selectedSchedule.start_time.substring(0,5) + ' - ' + selectedSchedule.end_time.substring(0,5)">
                                         </p>
@@ -570,85 +540,103 @@
                             <div>
                                 <h3 class="text-3xl font-black text-slate-900 tracking-tighter"
                                     x-text="editMode ? 'Edit Jadwal' : 'Tambah Jadwal'"></h3>
-                                <p class="text-sm font-medium text-slate-400 mt-1 uppercase tracking-widest text-[10px]">Lengkapi data formulir berikut.</p>
+                                <p
+                                    class="text-sm font-medium text-slate-400 mt-1 uppercase tracking-widest text-[10px]">
+                                    Lengkapi data formulir berikut.</p>
                             </div>
-                            <div class="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shadow-inner">
-                                <span class="material-symbols-outlined text-3xl" x-text="editMode ? 'edit_calendar' : 'add_task'"></span>
+                            <div
+                                class="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shadow-inner">
+                                <span class="material-symbols-outlined text-3xl"
+                                    x-text="editMode ? 'edit_calendar' : 'add_task'"></span>
                             </div>
                         </div>
 
                         @error('collision')
-                            <div class="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-600 flex items-center gap-3">
+                            <div
+                                class="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-600 flex items-center gap-3">
                                 <span class="material-symbols-outlined">warning</span>
                                 <p class="text-sm font-bold">{{ $message }}</p>
                             </div>
                         @enderror
 
                         <div class="space-y-8">
-                            <div class="grid grid-cols-2 gap-6">
-                                {{-- PRODI --}}
-                                <div>
-                                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">Program Studi</label>
-                                    <div class="relative group">
-                                        <select name="prodi_id" x-model="prodi_id"
-                                            class="w-full bg-slate-50 border-none rounded-2xl py-4 px-4 text-slate-700 font-bold focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all appearance-none cursor-pointer" required>
-                                            <option value="">-- Pilih --</option>
-                                            @foreach($allProdis as $prodi)
-                                                <option value="{{ $prodi->id }}">{{ $prodi->name }}</option>
-                                            @endforeach
-                                        </select>
-                                        <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none">expand_more</span>
-                                    </div>
-                                    @error('prodi_id') <p class="text-rose-500 text-[10px] mt-2 font-bold ml-1 tracking-tight">{{ $message }}</p> @enderror
-                                </div>
-
+                            <div class="grid grid-cols-1 gap-6">
                                 {{-- LAB --}}
                                 <div>
-                                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">Laboratorium</label>
+                                    <label
+                                        class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">Laboratorium</label>
                                     <div class="relative group">
                                         <select name="lab_id" x-model="formData.lab_id"
-                                            class="w-full bg-slate-50 border-none rounded-2xl py-4 px-4 text-slate-700 font-bold focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all appearance-none cursor-pointer" :disabled="!prodi_id" required>
-                                            <option value="">-- Pilih --</option>
+                                            class="w-full bg-slate-50 border-none rounded-2xl py-4 px-4 text-slate-700 font-bold focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all appearance-none cursor-pointer"
+                                            required>
+                                            <option value="">-- Pilih Laboratorium --</option>
                                             @foreach($allLabs as $lab)
-                                                <template x-if="prodi_id == '{{ $lab->prodi_id }}'">
-                                                    <option value="{{ $lab->id }}">{{ $lab->name }}</option>
-                                                </template>
+                                                <option value="{{ $lab->id }}">{{ $lab->name }}</option>
                                             @endforeach
                                         </select>
-                                        <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none">expand_more</span>
+                                        <span
+                                            class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none">expand_more</span>
                                     </div>
-                                    @error('lab_id') <p class="text-rose-500 text-[10px] mt-2 font-bold ml-1 tracking-tight">{{ $message }}</p> @enderror
+                                    @error('lab_id') <p
+                                        class="text-rose-500 text-[10px] mt-2 font-bold ml-1 tracking-tight">
+                                        {{ $message }}
+                                    </p> @enderror
                                 </div>
                             </div>
 
                             <div>
-                                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">Nama Kegiatan / Mata Kuliah</label>
+                                <label
+                                    class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">Nama
+                                    Kegiatan / Mata Kuliah</label>
                                 <div class="relative group">
-                                    <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors">description</span>
-                                    <input type="text" name="activity" x-model="formData.activity" placeholder="Contoh: Pemrograman Web"
-                                        class="w-full bg-slate-50 border-none rounded-2xl py-4 pl-12 pr-4 text-slate-700 font-bold placeholder:text-slate-300 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all" required>
+                                    <span
+                                        class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors">description</span>
+                                    <input type="text" name="activity" x-model="formData.activity"
+                                        placeholder="Contoh: Pemrograman Web"
+                                        class="w-full bg-slate-50 border-none rounded-2xl py-4 pl-12 pr-4 text-slate-700 font-bold placeholder:text-slate-300 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
+                                        required>
                                 </div>
-                                @error('activity') <p class="text-rose-500 text-[10px] mt-2 font-bold ml-1 tracking-tight">{{ $message }}</p> @enderror
+                                @error('activity') <p
+                                    class="text-rose-500 text-[10px] mt-2 font-bold ml-1 tracking-tight">
+                                    {{ $message }}
+                                </p> @enderror
                             </div>
 
                             <div class="grid grid-cols-3 gap-4">
                                 <div>
-                                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">Tanggal</label>
+                                    <label
+                                        class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">Tanggal</label>
                                     <input type="date" name="date" x-model="formData.date"
-                                        class="w-full bg-slate-50 border-none rounded-2xl py-4 px-4 text-slate-700 font-bold focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-sm" required>
-                                    @error('date') <p class="text-rose-500 text-[10px] mt-2 font-bold ml-1 tracking-tight">{{ $message }}</p> @enderror
+                                        class="w-full bg-slate-50 border-none rounded-2xl py-4 px-4 text-slate-700 font-bold focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-sm"
+                                        required>
+                                    @error('date') <p
+                                        class="text-rose-500 text-[10px] mt-2 font-bold ml-1 tracking-tight">
+                                        {{ $message }}
+                                    </p> @enderror
                                 </div>
                                 <div>
-                                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">Jam Mulai</label>
+                                    <label
+                                        class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">Jam
+                                        Mulai</label>
                                     <input type="time" name="start_time" x-model="formData.start_time"
-                                        class="w-full bg-slate-50 border-none rounded-2xl py-4 px-4 text-slate-700 font-bold focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-sm" required>
-                                    @error('start_time') <p class="text-rose-500 text-[10px] mt-2 font-bold ml-1 tracking-tight">{{ $message }}</p> @enderror
+                                        class="w-full bg-slate-50 border-none rounded-2xl py-4 px-4 text-slate-700 font-bold focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-sm"
+                                        required>
+                                    @error('start_time') <p
+                                        class="text-rose-500 text-[10px] mt-2 font-bold ml-1 tracking-tight">
+                                        {{ $message }}
+                                    </p> @enderror
                                 </div>
                                 <div>
-                                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">Jam Selesai</label>
+                                    <label
+                                        class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">Jam
+                                        Selesai</label>
                                     <input type="time" name="end_time" x-model="formData.end_time"
-                                        class="w-full bg-slate-50 border-none rounded-2xl py-4 px-4 text-slate-700 font-bold focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-sm" required>
-                                    @error('end_time') <p class="text-rose-500 text-[10px] mt-2 font-bold ml-1 tracking-tight">{{ $message }}</p> @enderror
+                                        class="w-full bg-slate-50 border-none rounded-2xl py-4 px-4 text-slate-700 font-bold focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-sm"
+                                        required>
+                                    @error('end_time') <p
+                                        class="text-rose-500 text-[10px] mt-2 font-bold ml-1 tracking-tight">
+                                        {{ $message }}
+                                    </p> @enderror
                                 </div>
                             </div>
                         </div>

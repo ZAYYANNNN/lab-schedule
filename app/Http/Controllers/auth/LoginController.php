@@ -16,7 +16,7 @@ class LoginController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'email'    => 'required|email',
+            'email' => 'required|email',
             'password' => 'required'
         ]);
 
@@ -30,9 +30,9 @@ class LoginController extends Controller
         $user = auth()->user();
 
         return match ($user->role) {
-            'superadmin' => redirect()->route('dashboard'),
-            'admin'      => redirect()->route('dashboard'),
-            default      => redirect('/'),
+            'superadmin' => redirect()->route('schedules.index'),
+            'admin' => redirect()->route('schedules.index'),
+            default => redirect()->route('schedules.index'),
         };
     }
 

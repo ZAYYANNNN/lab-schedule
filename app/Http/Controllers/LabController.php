@@ -57,6 +57,11 @@ class LabController extends Controller
 
     public function store(Request $r)
     {
+        // Hanya Superadmin yang boleh buat Lab
+        if (auth()->user()->role !== 'superadmin') {
+            abort(403, 'Anda tidak memiliki hak akses untuk membuat Lab baru.');
+        }
+
         // Validasi dasar
         $rules = [
             'name' => 'required|string|max:255',
@@ -65,15 +70,10 @@ class LabController extends Controller
             'kapasitas' => 'required|integer|min:1',
             'pj' => 'nullable|string',
             'status' => 'required|in:Tersedia,Digunakan,Maintenance',
+            'type' => 'required|in:praktikum,pengujian,sewa',
+            'prodi_id' => 'nullable|exists:prodis,id', // Superadmin wajib pilih prodi (atau null jika umum, tergantung aturan)
             'foto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
         ];
-
-        // Jika superadmin, validasi prodi_id
-        if (auth()->user()->role === 'superadmin') {
-            $rules['prodi_id'] = 'nullable|exists:prodis,id';
-        }
-
-        $rules['type'] = 'required|in:praktikum,pengujian,sewa';
 
         $r->validate($rules);
 
@@ -87,16 +87,9 @@ class LabController extends Controller
             'status'
         ]);
 
-        // LOGIKA PRODI
-        if (auth()->user()->role === 'admin') {
-            // Admin: Paksa ke prodi sendiri
-            $data['prodi_id'] = auth()->user()->prodi_id;
-            $data['prodi'] = auth()->user()->prodi()->value('name'); // Ambil nama dari relasi jika ada
-        } else {
-            // Superadmin: Pakai inputan
-            $data['prodi_id'] = $r->prodi_id;
-            $data['prodi'] = $r->prodi_id ? Prodi::where('id', $r->prodi_id)->value('name') : null;
-        }
+        // Logic Prodi untuk Superadmin
+        $data['prodi_id'] = $r->prodi_id;
+        $data['prodi'] = $r->prodi_id ? Prodi::where('id', $r->prodi_id)->value('name') : null;
 
         // UUID WAJIB DISET
         $data['id'] = Str::uuid();

@@ -2,9 +2,11 @@
     <div class="max-w-[1600px] mx-auto py-2" x-data="{
         selectedLabId: '{{ $labs->first()->id ?? '' }}',
         showModal: false,
+        showDetailModal: false,
         editMode: false,
         searchTerm: '',
         expandedProdiId: null,
+        selectedAsset: null,
         formData: {
             id: '',
             lab_id: '',
@@ -23,38 +25,12 @@
         get selectedLab() {
             return this.labs.find(l => l.id === this.selectedLabId);
         },
-        get filteredGroupedLabs() {
-            const grouped = {};
-            this.labs.forEach(lab => {
-                const prodiName = lab.prodi ? lab.prodi.name : 'Lainnya';
-                const prodiId = lab.prodi ? lab.prodi.id : 'other';
-                if (!grouped[prodiId]) {
-                    grouped[prodiId] = {
-                        id: prodiId,
-                        name: prodiName,
-                        labs: []
-                    };
-                }
-                grouped[prodiId].labs.push(lab);
-            });
-
+        get filteredLabsList() {
             const term = this.searchTerm.toLowerCase();
-            if (!term) return Object.values(grouped);
-
-            return Object.values(grouped).filter(group => {
-                const prodiMatch = group.name.toLowerCase().includes(term);
-                const labMatch = group.labs.some(lab => lab.name.toLowerCase().includes(term));
-                return prodiMatch || labMatch;
-            }).map(group => {
-                if (!group.name.toLowerCase().includes(term)) {
-                    return {
-                        ...group,
-                        labs: group.labs.filter(lab => lab.name.toLowerCase().includes(term))
-                    };
-                }
-                return group;
-            });
+            if (!term) return this.labs;
+            return this.labs.filter(lab => lab.name.toLowerCase().includes(term));
         },
+        
         openCreateModal(labId = null) {
             this.editMode = false;
             if (labId) {
@@ -71,6 +47,7 @@
             };
             this.showModal = true;
         },
+        
         openEditModal(asset) {
             this.editMode = true;
             this.formData = {
@@ -83,6 +60,11 @@
                 maintenance_count: asset.maintenance_count || 0
             };
             this.showModal = true;
+        },
+
+        openDetailModal(asset) {
+            this.selectedAsset = asset;
+            this.showDetailModal = true;
         }
     }">
 
@@ -134,92 +116,43 @@
                             <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
                                 <span class="material-symbols-outlined text-base">domain</span>
                             </div>
-                            <h2 class="font-black text-slate-800 uppercase text-xs tracking-[0.2em]">Daftar Laboratorium</h2>
+                            <h2 class="font-black text-slate-800 uppercase text-xs tracking-[0.2em]">Daftar Laboratorium
+                            </h2>
                         </div>
                         <div class="relative group">
                             <span
                                 class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors text-[20px]">search</span>
-                            <input type="text" x-model="searchTerm" placeholder="Cari prodi atau lab..."
+                            <input type="text" x-model="searchTerm" placeholder="Cari lab..."
                                 class="w-full bg-white border-slate-100 rounded-2xl pl-12 pr-4 py-3.5 text-sm font-bold focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all placeholder:text-slate-300 shadow-inner">
                         </div>
                     </div>
 
                     <div class="max-h-[600px] overflow-y-auto scrollbar-none select-none p-4 space-y-2">
-                        @if(auth()->user()->role === 'superadmin')
-                            <template x-for="prodi in filteredGroupedLabs" :key="prodi.id">
-                                <div class="group">
-                                    {{-- Prodi Item --}}
-                                    <div @click="expandedProdiId = (expandedProdiId === prodi.id ? null : prodi.id)"
-                                        class="p-4 flex items-center justify-between cursor-pointer rounded-2xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100 group/prodi">
-                                        <div class="flex items-center gap-4">
-                                            <div
-                                                class="w-10 h-10 rounded-xl bg-slate-100 text-slate-400 group-hover/prodi:bg-blue-100 group-hover/prodi:text-blue-600 flex items-center justify-center transition-colors shadow-sm">
-                                                <span class="material-symbols-outlined text-[20px]">school</span>
-                                            </div>
-                                            <div class="font-black text-sm text-slate-700 tracking-tight"
-                                                x-text="prodi.name"></div>
-                                        </div>
-                                        <span
-                                            class="material-symbols-outlined text-slate-300 transition-transform duration-300"
-                                            :class="expandedProdiId === prodi.id ? 'rotate-180' : ''">expand_more</span>
+                        <template x-for="lab in filteredLabsList" :key="lab.id">
+                            <div @click="selectedLabId = lab.id"
+                                :class="selectedLabId === lab.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'text-slate-500 hover:bg-slate-50 hover:text-blue-600'"
+                                class="p-4 cursor-pointer transition-all rounded-[1.5rem] border border-transparent flex items-center justify-between group">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-10 h-10 rounded-xl flex items-center justify-center transition-colors"
+                                        :class="selectedLabId === lab.id ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-400 group-hover:bg-blue-100 group-hover:text-blue-500'">
+                                        <span class="material-symbols-outlined text-[20px]">door_front</span>
                                     </div>
-
-                                    {{-- Lab List (Dropdown) --}}
-                                    <div x-show="expandedProdiId === prodi.id || searchTerm.length > 0"
-                                        x-transition:enter="transition ease-out duration-300"
-                                        x-transition:enter-start="opacity-0 -translate-y-4"
-                                        x-transition:enter-end="opacity-100 translate-y-0" class="mt-1 space-y-1">
-                                        <template x-for="lab in prodi.labs" :key="lab.id">
-                                            <div @click="selectedLabId = lab.id"
-                                                :class="selectedLabId === lab.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'text-slate-500 hover:bg-white hover:shadow-md hover:text-blue-600'"
-                                                class="ml-12 mr-2 p-3.5 rounded-2xl cursor-pointer transition-all flex items-center justify-between group/lab border border-transparent hover:border-slate-100">
-                                                <div class="flex items-center gap-3 overflow-hidden">
-                                                    <span
-                                                        class="material-symbols-outlined text-[18px] opacity-40">door_front</span>
-                                                    <div class="text-[13px] font-black tracking-tight truncate"
-                                                        x-text="lab.name"></div>
-                                                </div>
-                                                @if(auth()->user()->role === 'admin')
-                                                    <button @click.prevent.stop="openCreateModal(lab.id)"
-                                                        class="w-7 h-7 rounded-lg bg-white/20 backdrop-blur-md opacity-0 group-hover/lab:opacity-100 transition-opacity text-current flex items-center justify-center flex-shrink-0 hover:scale-110">
-                                                        <span class="material-symbols-outlined text-[18px]">add</span>
-                                                    </button>
-                                                @endif
-                                            </div>
-                                        </template>
-                                    </div>
+                                    <div class="font-black text-sm tracking-tighter truncate" x-text="lab.name"></div>
                                 </div>
-                            </template>
+                                @if(in_array(auth()->user()->role, ['admin', 'superadmin']))
+                                    <button @click.prevent.stop="openCreateModal(lab.id)"
+                                        class="w-8 h-8 rounded-lg bg-white/20 opacity-0 group-hover:opacity-100 transition-all text-current flex items-center justify-center flex-shrink-0 hover:scale-110">
+                                        <span class="material-symbols-outlined text-[18px]">add</span>
+                                    </button>
+                                @endif
+                            </div>
+                        </template>
 
-                            <div x-show="filteredGroupedLabs.length === 0"
-                                class="p-12 text-center text-slate-400 italic text-sm">
-                                <span class="material-symbols-outlined text-4xl mb-4 opacity-20 block">search_off</span>
-                                Tidak ada hasil untuk "<span x-text="searchTerm" class="font-bold"></span>"
-                            </div>
-                        @else
-                            {{-- Simple Lab List for Admin --}}
-                            <div class="space-y-2">
-                                @foreach($labs as $lab)
-                                    <div @click="selectedLabId = '{{ $lab->id }}'"
-                                        :class="selectedLabId === '{{ $lab->id }}' ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'text-slate-500 hover:bg-slate-50 hover:text-blue-600'"
-                                        class="p-4 cursor-pointer transition-all rounded-[1.5rem] border border-transparent flex items-center justify-between group">
-                                        <div class="flex items-center gap-4">
-                                            <div class="w-10 h-10 rounded-xl flex items-center justify-center transition-colors"
-                                                :class="selectedLabId === '{{ $lab->id }}' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-400 group-hover:bg-blue-100 group-hover:text-blue-500'">
-                                                <span class="material-symbols-outlined text-[20px]">door_front</span>
-                                            </div>
-                                            <div class="font-black text-sm tracking-tighter truncate">{{ $lab->name }}</div>
-                                        </div>
-                                        @if(auth()->user()->role === 'admin')
-                                            <button @click.prevent.stop="openCreateModal('{{ $lab->id }}')"
-                                                class="w-8 h-8 rounded-lg bg-white/20 opacity-0 group-hover:opacity-100 transition-all text-current flex items-center justify-center flex-shrink-0 hover:scale-110">
-                                                <span class="material-symbols-outlined text-[18px]">add</span>
-                                            </button>
-                                        @endif
-                                    </div>
-                                @endforeach
-                            </div>
-                        @endif
+                        <div x-show="filteredLabsList.length === 0"
+                            class="p-12 text-center text-slate-400 italic text-sm">
+                            <span class="material-symbols-outlined text-4xl mb-4 opacity-20 block">search_off</span>
+                            Tidak ada hasil untuk "<span x-text="searchTerm" class="font-bold"></span>"
+                        </div>
                     </div>
                 </div>
             </aside>
@@ -263,7 +196,7 @@
                                 </div>
                             </div>
                         </div>
-                        @if(auth()->user()->role === 'admin')
+                        @if(in_array(auth()->user()->role, ['admin', 'superadmin']))
                             <button @click="openCreateModal()"
                                 class="relative z-10 bg-slate-900 text-white px-8 py-4 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] flex items-center gap-3 shadow-2xl shadow-slate-900/20 hover:bg-blue-600 hover:shadow-blue-200 transition-all active:scale-95 group/btn">
                                 <span
@@ -277,7 +210,8 @@
                 {{-- GRID ASSET REDESIGNED --}}
                 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                     <template x-for="asset in filteredAssets" :key="asset.id">
-                        <div class="group bg-white rounded-[1.5rem] border-2 transition-all duration-500 hover:shadow-2xl overflow-hidden flex flex-col h-full"
+                        <div @click="openDetailModal(asset)"
+                            class="group bg-white rounded-[1.5rem] border-2 transition-all duration-500 hover:shadow-2xl overflow-hidden flex flex-col h-full cursor-pointer transform hover:-translate-y-1"
                             :class="(asset.jumlah - (asset.borrowed_count || 0) - (asset.maintenance_count || 0)) <= 5 
                                 ? 'border-amber-100 hover:border-amber-400' 
                                 : 'border-emerald-50 hover:border-emerald-400'">
@@ -351,9 +285,9 @@
                                 </div>
                             </div>
 
-                            @if(auth()->user()->role === 'admin')
+                            @if(in_array(auth()->user()->role, ['admin', 'superadmin']))
                                 <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center gap-3">
-                                    <button @click="openEditModal(asset)"
+                                    <button @click.stop="openEditModal(asset)"
                                         class="flex-1 text-[10px] font-black py-3 rounded-xl bg-white text-slate-600 border border-slate-200 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all uppercase tracking-[0.2em] flex items-center justify-center gap-2 shadow-sm">
                                         <span class="material-symbols-outlined text-[18px]">edit_note</span>
                                         Edit
@@ -361,7 +295,7 @@
                                     <form :action="'/assets/' + asset.id" method="POST"
                                         onsubmit="return confirm('Hapus aset ini?')" class="flex-none">
                                         @csrf @method('DELETE')
-                                        <button
+                                        <button @click.stop
                                             class="w-10 h-10 rounded-xl bg-white text-slate-300 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 border border-slate-200 transition-all flex items-center justify-center shadow-sm">
                                             <span class="material-symbols-outlined text-[20px]">delete</span>
                                         </button>
@@ -386,13 +320,6 @@
                         <p
                             class="text-slate-400 font-medium text-sm max-w-[320px] mx-auto tracking-tight mb-10 leading-relaxed">
                             Laboratorium ini belum memiliki data inventaris yang terdaftar dalam sistem.</p>
-                        @if(auth()->user()->role === 'admin')
-                            <button @click="openCreateModal()"
-                                class="inline-flex items-center gap-2 text-blue-600 font-black text-[11px] uppercase tracking-[0.2em] px-8 py-4 rounded-2xl bg-blue-50 hover:bg-blue-600 hover:text-white transition-all shadow-md active:scale-95">
-                                <span class="material-symbols-outlined text-lg">add_circle</span>
-                                Tambah Aset Pertama
-                            </button>
-                        @endif
                     </div>
                 </template>
             </main>
@@ -439,20 +366,26 @@
 
                         {{-- LAB SELECTION --}}
                         <div class="mb-8">
-                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">Pilih Laboratorium</label>
+                            <label
+                                class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">Pilih
+                                Laboratorium</label>
                             <div class="relative group">
-                                <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors">door_front</span>
+                                <span
+                                    class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors">door_front</span>
                                 <select name="lab_id" x-model="formData.lab_id" required
                                     class="w-full bg-slate-50 border-none rounded-2xl py-4 pl-12 pr-4 text-slate-700 font-bold focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-sm appearance-none cursor-pointer">
                                     <option value="">-- Pilih Lab --</option>
                                     <template x-for="lab in labs" :key="lab.id">
-                                        <option :value="lab.id" x-text="lab.name" :selected="lab.id === formData.lab_id"></option>
+                                        <option :value="lab.id" x-text="lab.name"
+                                            :selected="lab.id === formData.lab_id"></option>
                                     </template>
                                 </select>
-                                <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none">expand_more</span>
+                                <span
+                                    class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none">expand_more</span>
                             </div>
                             <template x-if="labs.length === 0">
-                                <p class="text-rose-500 text-[10px] mt-2 font-bold ml-1 tracking-tight">Peringatan: Tidak ada Lab yang tersedia di Prodi ini. Silakan buat Lab terlebih dahulu.</p>
+                                <p class="text-rose-500 text-[10px] mt-2 font-bold ml-1 tracking-tight">Peringatan:
+                                    Tidak ada Lab yang tersedia di Prodi ini. Silakan buat Lab terlebih dahulu.</p>
                             </template>
                         </div>
 
@@ -537,6 +470,90 @@
                             </button>
                         </div>
                     </form>
+                </div>
+            </div>
+        </div>
+
+        {{-- MODAL DETAIL ASSET --}}
+        <div x-show="showDetailModal" class="fixed inset-0 z-50 overflow-y-auto" x-cloak>
+            <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                {{-- Backdrop --}}
+                <div x-show="showDetailModal" x-transition:enter="ease-out duration-300"
+                    x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+                    x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100"
+                    x-transition:leave-end="opacity-0" @click="showDetailModal = false"
+                    class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm"></div>
+
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen"></span>
+                <div x-show="showDetailModal" x-transition:enter="ease-out duration-500"
+                    x-transition:enter-start="opacity-0 translate-y-24 sm:translate-y-0 sm:scale-95"
+                    x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                    x-transition:leave="ease-in duration-300"
+                    x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                    x-transition:leave-end="opacity-0 translate-y-24 sm:translate-y-0 sm:scale-95"
+                    class="inline-block align-bottom bg-white rounded-[2.5rem] text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-white">
+
+                    <div class="absolute top-4 right-4 z-10">
+                        <button @click="showDetailModal = false"
+                            class="w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors">
+                            <span class="material-symbols-outlined text-slate-500">close</span>
+                        </button>
+                    </div>
+
+                    <div class="p-8">
+                        <template x-if="selectedAsset">
+                            <div class="text-center">
+                                <div
+                                    class="w-24 h-24 rounded-[2rem] bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-6 shadow-md">
+                                    <span class="material-symbols-outlined text-5xl">inventory_2</span>
+                                </div>
+                                <h2 class="text-2xl font-black text-slate-900 tracking-tighter leading-tight"
+                                    x-text="selectedAsset.nama"></h2>
+                                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1"
+                                    x-text="selectedAsset.kode_aset || 'NO-ID'"></p>
+                                <span
+                                    class="inline-block px-3 py-1 rounded-full bg-slate-100 text-slate-500 text-[10px] font-bold uppercase tracking-wider mt-3"
+                                    x-text="selectedAsset.kategori || 'Uncategorized'"></span>
+
+                                <div class="grid grid-cols-3 gap-4 mt-8">
+                                    <div class="bg-indigo-50 p-4 rounded-2xl">
+                                        <p
+                                            class="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">
+                                            Total</p>
+                                        <p class="text-2xl font-black text-indigo-700" x-text="selectedAsset.jumlah">
+                                        </p>
+                                    </div>
+                                    <div class="bg-emerald-50 p-4 rounded-2xl">
+                                        <p
+                                            class="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">
+                                            Ready</p>
+                                        <p class="text-2xl font-black text-emerald-700"
+                                            x-text="selectedAsset.jumlah - (selectedAsset.borrowed_count || 0) - (selectedAsset.maintenance_count || 0)">
+                                        </p>
+                                    </div>
+                                    <div class="bg-blue-50 p-4 rounded-2xl">
+                                        <p class="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">
+                                            Dipakai</p>
+                                        <p class="text-2xl font-black text-blue-700"
+                                            x-text="selectedAsset.borrowed_count || 0"></p>
+                                    </div>
+                                </div>
+
+                                <div class="mt-6 text-left bg-slate-50 rounded-2xl p-5 border border-slate-100">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <span class="text-xs font-bold text-slate-400">Laboratorium</span>
+                                        <span class="text-xs font-bold text-slate-700"
+                                            x-text="selectedLab ? selectedLab.name : '-'"></span>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-xs font-bold text-slate-400">Maintenance</span>
+                                        <span class="text-xs font-bold text-slate-700"
+                                            x-text="(selectedAsset.maintenance_count || 0) + ' Unit'"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
                 </div>
             </div>
         </div>

@@ -64,8 +64,8 @@ class AssetController extends Controller
      */
     public function store(Request $request)
     {
-        if (auth()->user()->role !== 'admin') {
-            abort(403, 'Hanya Admin Prodi yang dapat menambah aset.');
+        if (!in_array(auth()->user()->role, ['admin', 'superadmin'])) {
+            abort(403, 'Anda tidak memiliki akses untuk menambah aset.');
         }
 
         $validated = $request->validate([
@@ -110,8 +110,8 @@ class AssetController extends Controller
      */
     public function update(Request $request, AssetLab $asset)
     {
-        if (auth()->user()->role !== 'admin') {
-            abort(403, 'Hanya Admin Prodi yang dapat mengubah aset.');
+        if (!in_array(auth()->user()->role, ['admin', 'superadmin'])) {
+            abort(403, 'Anda tidak memiliki akses untuk mengubah aset.');
         }
 
         $validated = $request->validate([
@@ -141,8 +141,8 @@ class AssetController extends Controller
      */
     public function destroy(AssetLab $asset)
     {
-        if (auth()->user()->role !== 'admin') {
-            abort(403, 'Hanya Admin Prodi yang dapat menghapus aset.');
+        if (!in_array(auth()->user()->role, ['admin', 'superadmin'])) {
+            abort(403, 'Anda tidak memiliki akses untuk menghapus aset.');
         }
 
         $this->authorizeAssetOwnership($asset);

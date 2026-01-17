@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <link rel="icon" href="{{ asset('images/umy.png') }}">
 
     <style>
         body {
@@ -76,26 +77,29 @@
         </main>
     </div>
 
-    [x-cloak] {
-    display: none !important;
-    }
 
-    @keyframes fade-in-down {
-    0% {
-    opacity: 0;
-    transform: translateY(-10px);
-    }
+    <style>
+        [x-cloak] {
+            display: none !important;
+        }
 
-    100% {
-    opacity: 1;
-    transform: translateY(0);
-    }
-    }
+        @keyframes fade-in-down {
+            0% {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
 
-    .animate-fade-in-down {
-    animation: fade-in-down 0.5s ease-out forwards;
-    }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-fade-in-down {
+            animation: fade-in-down 0.5s ease-out forwards;
+        }
     </style>
+
 
     @stack('scripts')
 </body>

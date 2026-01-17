@@ -14,6 +14,7 @@
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <link rel="icon" href="{{ asset('images/umy.png') }}">
 
     <style>
         body {
@@ -23,95 +24,134 @@
 </head>
 
 <body class="antialiased bg-slate-50">
-    <div class="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8 relative overflow-hidden">
+    <div class="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
         {{-- Background Decorations --}}
-        <div
-            class="absolute top-0 left-0 w-full h-full -z-10 bg-[radial-gradient(circle_at_TOP_LEFT,_var(--tw-gradient-stops))] from-blue-100/50 via-slate-50 to-indigo-100/30">
-        </div>
-        <div class="absolute -top-24 -right-24 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl"></div>
-        <div class="absolute -bottom-24 -left-24 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl"></div>
+        <div class="absolute top-0 left-0 w-full h-full -z-10 bg-slate-50"></div>
+        <div class="absolute -top-[20%] -right-[10%] w-[70vw] h-[70vw] bg-blue-600/5 rounded-full blur-3xl"></div>
+        <div class="absolute -bottom-[20%] -left-[10%] w-[60vw] h-[60vw] bg-indigo-600/5 rounded-full blur-3xl"></div>
 
-        <div class="w-full max-w-lg">
-            {{-- Branding --}}
-            <div class="text-center mb-8">
-                <div
-                    class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-600 shadow-xl shadow-blue-200 mb-4 animate-bounce-slow">
-                    <span class="material-symbols-outlined text-white text-3xl">science</span>
+        {{-- Main Container Card --}}
+        <div
+            class="w-full max-w-5xl bg-white rounded-[2.5rem] shadow-2xl shadow-slate-200/50 overflow-hidden grid grid-cols-1 md:grid-cols-2 min-h-[600px]">
+
+            {{-- Left Column: Summary & Branding --}}
+            <div class="bg-blue-600 p-8 sm:p-12 flex flex-col justify-between relative overflow-hidden text-white">
+                {{-- Decorative Shapes --}}
+                <div class="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+                    <div class="absolute top-10 right-10 w-32 h-32 rounded-full border-4 border-white"></div>
+                    <div class="absolute bottom-[-50px] left-[-50px] w-64 h-64 rounded-full bg-white blur-3xl"></div>
                 </div>
-                <h1 class="text-4xl font-black text-slate-900 tracking-tight mb-2">SmartLab</h1>
-                <p class="text-slate-500 font-medium">Integrated Laboratory & Asset Management</p>
+
+                <div class="relative z-10">
+                    {{-- Logo --}}
+                    <div class="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-lg mb-8">
+                        <img src="{{ asset('images/umy.png') }}" alt="UMY Logo" class="w-12 h-12 object-contain">
+                    </div>
+
+                    <h1 class="text-4xl sm:text-5xl font-black tracking-tight leading-tight mb-4">
+                        SmartLab
+                        <span class="block text-blue-200 text-2xl font-bold mt-1">Ecosystem</span>
+                    </h1>
+
+                    <p class="text-blue-100 text-lg leading-relaxed font-medium max-w-md">
+                        Sistem Informasi Manajemen Laboratorium Universitas Muhammadiyah Yogyakarta.
+                    </p>
+
+                    <div class="mt-8 space-y-4">
+                        <div
+                            class="flex items-center gap-4 bg-blue-500/30 p-4 rounded-xl backdrop-blur-sm border border-blue-400/30">
+                            <span class="material-symbols-outlined text-3xl">calendar_month</span>
+                            <div>
+                                <h3 class="font-bold">Penjadwalan</h3>
+                                <p class="text-xs text-blue-100">Kelola jadwal praktikum dengan mudah</p>
+                            </div>
+                        </div>
+                        <div
+                            class="flex items-center gap-4 bg-blue-500/30 p-4 rounded-xl backdrop-blur-sm border border-blue-400/30">
+                            <span class="material-symbols-outlined text-3xl">inventory_2</span>
+                            <div>
+                                <h3 class="font-bold">Inventaris</h3>
+                                <p class="text-xs text-blue-100">Manajemen aset dan peminjaman alat</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="relative z-10 mt-12">
+                    <p class="text-xs font-semibold text-blue-200 uppercase tracking-widest">
+                        &copy; {{ date('Y') }} UMY. All Rights Reserved.
+                    </p>
+                </div>
             </div>
 
-            {{-- Login Card --}}
-            <div
-                class="bg-white/70 backdrop-blur-xl rounded-[2.5rem] shadow-2xl shadow-blue-900/5 border border-white p-8 sm:p-12 relative overflow-hidden">
-                <x-auth-session-status class="mb-6" :status="session('status')" />
+            {{-- Right Column: Login Form --}}
+            <div class="p-8 sm:p-12 flex flex-col justify-center bg-white">
+                <div class="w-full max-w-md mx-auto">
+                    <div class="mb-8">
+                        <h2 class="text-3xl font-black text-slate-800 mb-2">Selamat Datang</h2>
+                        <p class="text-slate-500 font-medium">Silakan masuk menggunakan akun Anda untuk mengakses.</p>
+                    </div>
 
-                <div class="mb-8">
-                    <h2 class="text-2xl font-bold text-slate-800 mb-1">Selamat Datang!</h2>
-                    <p class="text-slate-400 text-sm font-medium">Silakan masuk untuk mengelola laboratorium Anda.</p>
+                    <x-auth-session-status class="mb-6" :status="session('status')" />
+
+                    <form method="POST" action="{{ route('login') }}" class="space-y-5">
+                        @csrf
+
+                        {{-- Email --}}
+                        <div>
+                            <label for="email"
+                                class="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Email</label>
+                            <div class="relative group">
+                                <span
+                                    class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-600 transition-colors">mail</span>
+                                <input id="email" type="email" name="email" :value="old('email')" required autofocus
+                                    placeholder="nama@email.com"
+                                    class="w-full bg-slate-50 border border-slate-200 rounded-xl py-3.5 pl-12 pr-4 text-slate-700 font-semibold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 outline-none transition-all">
+                            </div>
+                            <x-input-error :messages="$errors->get('email')"
+                                class="mt-2 text-xs font-bold text-rose-500 ml-1" />
+                        </div>
+
+                        {{-- Password --}}
+                        <div>
+                            <div class="flex justify-between items-center mb-2 ml-1">
+                                <label for="password"
+                                    class="block text-xs font-black text-slate-400 uppercase tracking-widest">Password</label>
+                                @if (Route::has('password.request'))
+                                    <a href="{{ route('password.request') }}"
+                                        class="text-[10px] font-bold text-blue-600 hover:text-blue-700 uppercase tracking-widest">Lupa
+                                        Password?</a>
+                                @endif
+                            </div>
+                            <div class="relative group">
+                                <span
+                                    class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-600 transition-colors">lock</span>
+                                <input id="password" type="password" name="password" required placeholder="••••••••"
+                                    class="w-full bg-slate-50 border border-slate-200 rounded-xl py-3.5 pl-12 pr-4 text-slate-700 font-semibold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 outline-none transition-all">
+                            </div>
+                            <x-input-error :messages="$errors->get('password')"
+                                class="mt-2 text-xs font-bold text-rose-500 ml-1" />
+                        </div>
+
+                        {{-- Remember Me --}}
+                        <div class="flex items-center ml-1">
+                            <label class="inline-flex items-center cursor-pointer group">
+                                <input type="checkbox" name="remember"
+                                    class="w-5 h-5 rounded-md border-slate-300 text-blue-600 focus:ring-blue-500 shadow-sm transition-all cursor-pointer">
+                                <span
+                                    class="ms-3 text-sm font-semibold text-slate-500 group-hover:text-slate-700 transition-colors">Ingat
+                                    saya</span>
+                            </label>
+                        </div>
+
+                        {{-- Submit --}}
+                        <button type="submit"
+                            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-600/20 hover:shadow-blue-600/30 transition-all active:scale-[0.98] flex items-center justify-center gap-2 mt-4">
+                            <span>Masuk Sekarang</span>
+                            <span class="material-symbols-outlined text-xl">arrow_forward</span>
+                        </button>
+                    </form>
                 </div>
-
-                <form method="POST" action="{{ route('login') }}" class="space-y-6">
-                    @csrf
-
-                    {{-- Email --}}
-                    <div>
-                        <label for="email"
-                            class="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Alamat
-                            Email</label>
-                        <div class="relative group">
-                            <span
-                                class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors">alternate_email</span>
-                            <input id="email" type="email" name="email" :value="old('email')" required autofocus
-                                placeholder="nama@prodi.com"
-                                class="w-full bg-slate-100/50 border-none rounded-2xl py-4 pl-12 pr-4 text-slate-700 font-semibold placeholder:text-slate-300 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
-                        </div>
-                        <x-input-error :messages="$errors->get('email')" class="mt-2 text-xs font-bold ml-1" />
-                    </div>
-
-                    {{-- Password --}}
-                    <div>
-                        <div class="flex justify-between items-center mb-2 ml-1">
-                            <label for="password"
-                                class="block text-xs font-black text-slate-400 uppercase tracking-widest tracking-widest">Password</label>
-                            @if (Route::has('password.request'))
-                                <a href="{{ route('password.request') }}"
-                                    class="text-[10px] font-black text-blue-600 hover:text-blue-700 uppercase tracking-widest">Lupa
-                                    Password?</a>
-                            @endif
-                        </div>
-                        <div class="relative group">
-                            <span
-                                class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors">lock</span>
-                            <input id="password" type="password" name="password" required placeholder="••••••••"
-                                class="w-full bg-slate-100/50 border-none rounded-2xl py-4 pl-12 pr-4 text-slate-700 font-semibold placeholder:text-slate-300 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
-                        </div>
-                        <x-input-error :messages="$errors->get('password')" class="mt-2 text-xs font-bold ml-1" />
-                    </div>
-
-                    {{-- Remember Me --}}
-                    <div class="flex items-center justify-between ml-1">
-                        <label class="inline-flex items-center cursor-pointer group">
-                            <input type="checkbox" name="remember"
-                                class="w-5 h-5 rounded-lg border-slate-200 text-blue-600 focus:ring-blue-500 shadow-sm transition-all cursor-pointer">
-                            <span
-                                class="ms-3 text-sm font-bold text-slate-500 group-hover:text-slate-700 transition-colors">Ingat
-                                saya</span>
-                        </label>
-                    </div>
-
-                    {{-- Submit --}}
-                    <button type="submit"
-                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-2xl shadow-xl shadow-blue-200 transition-all active:scale-[0.98] flex items-center justify-center gap-2 tracking-wide uppercase text-sm">
-                        Masuk Ke Dashboard
-                        <span class="material-symbols-outlined text-white">login</span>
-                    </button>
-
-                    <p class="text-center text-[11px] text-slate-300 font-bold uppercase tracking-[0.2em] mt-8">
-                        &copy; {{ date('Y') }} SMARTLAB ECOSYSTEM
-                    </p>
-                </form>
             </div>
         </div>
     </div>

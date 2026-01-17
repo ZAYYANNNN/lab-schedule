@@ -12,10 +12,12 @@
                 Daftar Lab
             </h2>
 
-            <button @click="openCreate = true"
-                class="bg-blue-600 text-white px-5 py-2 rounded-lg shadow hover:bg-blue-700 transition text-base font-medium">
-                + Tambah Lab
-            </button>
+            @if(auth()->user()->role === 'superadmin')
+                <button @click="openCreate = true"
+                    class="bg-blue-600 text-white px-5 py-2 rounded-lg shadow hover:bg-blue-700 transition text-base font-medium">
+                    + Tambah Lab
+                </button>
+            @endif
         </div>
 
         <p class="max-w-7xl mx-auto sm:px-6 lg:px-8 px-1 text-gray-600 text-base font-normal -mt-1">
@@ -79,12 +81,6 @@
                                 <img :src="lab.foto ? ('/storage/' + lab.foto) : 'https://placehold.co/400x200/fafafa/D4D4D4?text=LAB+Image'"
                                     class="w-full h-full object-cover border-b border-gray-100">
 
-                                <template x-if="lab.prodi">
-                                    <span
-                                        class="absolute top-2 left-2 px-3 py-1 text-xs font-semibold rounded-full shadow-md bg-blue-300 text-gray-800">
-                                        <span x-text="lab.prodi"></span>
-                                    </span>
-                                </template>
                                 {{-- Status & Type Badge --}}
                                 <div class="absolute top-2 right-2 flex flex-col gap-1 items-end">
                                     <span class="px-3 py-1 text-xs font-semibold rounded-full shadow-md" :class="{
@@ -116,398 +112,323 @@
                                 {{-- INFORMASI P.J., KAPASITAS, DAN PRODI (di dalam box latar belakang) --}}
                                 <div class="bg-gray-50 rounded-lg p-3 space-y-2 flex-grow">
 
-                                    <div class="flex items-center justify-between"> {{-- Menggunakan justify-between
-                                        untuk Prodi di sisi kanan --}}
+                                    {{-- Kapasitas & PJ --}}
+                                    <div class="flex items-center gap-4">
+                                        <p class="flex items-center gap-2 text-gray-700 text-sm">
+                                            <span class="material-symbols-outlined text-gray-500 text-base">group</span>
+                                            <span class="font-medium" x-text="lab.kapasitas"></span>
+                                        </p>
 
-                                        {{-- Kapasitas & PJ --}}
-                                        <div class="flex items-center gap-4">
-                                            <p class="flex items-center gap-2 text-gray-700 text-sm">
-                                                <span
-                                                    class="material-symbols-outlined text-gray-500 text-base">group</span>
-                                                <span class="font-medium" x-text="lab.kapasitas"></span>
-                                            </p>
+                                        <div class="h-4 w-px bg-gray-300"></div>
 
-                                            <div class="h-4 w-px bg-gray-300"></div>
-
-                                            <div class="text-sm text-gray-700">
-                                                <span class="text-xs text-gray-500 block -mb-0.5">Penanggung
-                                                    Jawab</span>
-                                                <span class="font-medium" x-text="lab.pj"></span>
-                                            </div>
+                                        <div class="text-sm text-gray-700">
+                                            <span class="text-xs text-gray-500 block -mb-0.5">Penanggung Jawab</span>
+                                            <span class="font-medium" x-text="lab.pj"></span>
                                         </div>
-
-                                        {{-- PRODI (Di Sisi Kanan) --}}
-                                        <template x-if="lab.prodi">
-                                            <p class="text-gray-600 text-sm flex items-center gap-1.5 flex-shrink-0">
-                                            <div class="w-2 h-2 rounded-full bg-blue-600 flex-shrink-0"></div>
-                                            <span x-text="lab.prodi"></span>
-                                            </p>
-                                        </template>
-
                                     </div>
                                 </div>
+                            </div>
 
-                                {{-- AKSI TOMBOL --}}
-                                <div class="flex gap-2 mt-4 pt-3 border-t border-gray-100">
+                            {{-- AKSI TOMBOL --}}
+                            <div class="flex gap-2 mt-4 pt-3 border-t border-gray-100">
 
-                                    {{-- EDIT Button (Full width) --}}
-                                    <button type="button" @click.stop="openEditModal(lab)"
-                                        class="flex items-center gap-2 text-blue-700 font-medium bg-blue-50 
+                                {{-- EDIT Button (Full width) --}}
+                                <button type="button" @click.stop="openEditModal(lab)"
+                                    class="flex items-center gap-2 text-blue-700 font-medium bg-blue-50 
                                         hover:bg-blue-100 hover:text-blue-800
                                         px-4 py-2 rounded-lg transition-all duration-200 w-full justify-center text-sm border border-blue-200 shadow-sm active:scale-95">
-                                        <span class="material-symbols-outlined text-lg">edit</span>
-                                        <span>Edit Lab</span>
-                                    </button>
+                                    <span class="material-symbols-outlined text-lg">edit</span>
+                                    <span>Edit Lab</span>
+                                </button>
 
-                                    {{-- DELETE Button (Icon only) --}}
-                                    <form :action="`/labs/${lab.id}`" method="POST"
-                                        on_submit="return confirm('Apakah Anda yakin ingin menghapus laboratorium ' + lab.name + '?')"
-                                        class="flex-shrink-0">
-                                        @csrf @method('DELETE')
+                                {{-- DELETE Button (Icon only) --}}
+                                <form :action="`/labs/${lab.id}`" method="POST"
+                                    on_submit="return confirm('Apakah Anda yakin ingin menghapus laboratorium ' + lab.name + '?')"
+                                    class="flex-shrink-0">
+                                    @csrf @method('DELETE')
 
-                                        <button type="submit"
-                                            class="text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 
+                                    <button type="submit"
+                                        class="text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 
                                             p-2 rounded-lg transition-all duration-200 border border-red-200 shadow-sm active:scale-95 flex items-center justify-center">
-                                            <span class="material-symbols-outlined text-lg">delete</span>
-                                        </button>
-                                    </form>
-
-                                </div>
+                                        <span class="material-symbols-outlined text-lg">delete</span>
+                                    </button>
+                                </form>
 
                             </div>
+
                         </div>
-
-                    </template>
-
                 </div>
 
+                </template>
+
             </div>
+
         </div>
+    </div>
 
 
 
-        {{-- ================= MODAL CREATE ================= --}}
-        <div x-show="openCreate" x-transition:enter="ease-out duration-300"
-            x-transition:enter-start="opacity-0 scale-90" x-transition:enter-end="opacity-100 scale-100"
-            x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 scale-100"
-            x-transition:leave-end="opacity-0 scale-90"
-            class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+    {{-- ================= MODAL CREATE ================= --}}
+    <div x-show="openCreate" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 scale-90"
+        x-transition:enter-end="opacity-100 scale-100" x-transition:leave="ease-in duration-200"
+        x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-90"
+        class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
 
-            <div @click.outside="openCreate = false" class="bg-white w-[34rem] p-6 rounded-xl shadow-lg">
+        <div @click.outside="openCreate = false" class="bg-white w-[34rem] p-6 rounded-xl shadow-lg">
 
-                <h2 class="text-xl font-bold mb-4">Tambah Laboratorium Baru</h2>
+            <h2 class="text-xl font-bold mb-4">Tambah Laboratorium Baru</h2>
 
-                <form action="{{ route('labs.store') }}" method="POST" enctype="multipart/form-data" class="px-6 py-4">
-                    @csrf
+            <form action="{{ route('labs.store') }}" method="POST" enctype="multipart/form-data" class="px-6 py-4">
+                @csrf
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
-                        {{-- Nama Lab --}}
-                        <div class="space-y-1">
-                            <label class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Nama
-                                Laboratorium</label>
-                            <input name="name" required placeholder="Contoh: Lab Komputer 1"
-                                class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
+                    {{-- Nama Lab --}}
+                    <div class="space-y-1">
+                        <label class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Nama
+                            Laboratorium</label>
+                        <input name="name" required placeholder="Contoh: Lab Komputer 1"
+                            class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm">
+                    </div>
+
+                    {{-- Kode Lab --}}
+                    <div class="space-y-1">
+                        <label class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Kode
+                            Lab</label>
+                        <input name="kode_lab" required placeholder="Contoh: LK-01"
+                            class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm">
+                    </div>
+
+                    {{-- Kapasitas --}}
+                    <div class="space-y-1">
+                        <label
+                            class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Kapasitas</label>
+                        <div class="relative">
+                            <span
+                                class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">groups</span>
+                            <input type="number" name="kapasitas" required placeholder="0"
+                                class="w-full pl-10 pr-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm">
                         </div>
+                    </div>
 
-                        {{-- Kode Lab --}}
-                        <div class="space-y-1">
-                            <label class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Kode
-                                Lab</label>
-                            <input name="kode_lab" required placeholder="Contoh: LK-01"
-                                class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm">
+                    {{-- Tipe Lab --}}
+                    <div class="space-y-1">
+                        <label class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Tipe
+                            Lab</label>
+                        <select name="type" required
+                            class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm appearance-none">
+                            <option value="praktikum">Praktikum</option>
+                            <option value="pengujian">Pengujian</option>
+                            <option value="sewa">Sewa</option>
+                        </select>
+                    </div>
+
+                    {{-- Lokasi --}}
+                    <div class="space-y-1 md:col-span-2">
+                        <label class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Lokasi /
+                            Gedung</label>
+                        <div class="relative">
+                            <span
+                                class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">apartment</span>
+                            <input name="lokasi" required placeholder="Gedung A, Lantai 2"
+                                class="w-full pl-10 pr-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm">
                         </div>
+                    </div>
 
-                        {{-- Prodi (khusus superadmin) --}}
-                        @if(auth()->user()->role === 'superadmin')
-                            <div class="space-y-1 relative md:col-span-2" x-show="newType === 'praktikum'" x-transition>
-                                <label class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Program
-                                    Studi</label>
-                                <input type="hidden" name="prodi_id" x-model="selectedProdiId">
-                                <div class="relative">
-                                    <span
-                                        class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">school</span>
-                                    <input type="text" x-model="searchProdi" @input="filterProdi()" @focus="filterProdi()"
-                                        placeholder="Cari program studi..." autocomplete="off"
-                                        class="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm">
-                                </div>
-                                <ul x-show="filteredProdi.length > 0" @click.outside="filteredProdi = []"
-                                    class="absolute z-[70] bg-white border border-gray-200 mt-1 w-full rounded-xl shadow-xl max-h-48 overflow-y-auto py-2 divide-y divide-gray-50">
-                                    <template x-for="item in filteredProdi" :key="item.id">
-                                        <li @click="selectProdi(item)"
-                                            class="px-4 py-2.5 hover:bg-blue-50 cursor-pointer transition flex items-center justify-between group">
-                                            <span class="text-gray-700 group-hover:text-blue-700 font-medium"
-                                                x-text="item.name"></span>
-                                            <span
-                                                class="material-symbols-outlined text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity">check_circle</span>
-                                        </li>
-                                    </template>
-                                </ul>
-                            </div>
-                        @endif
-
-                        {{-- Kapasitas --}}
-                        <div class="space-y-1">
-                            <label
-                                class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Kapasitas</label>
-                            <div class="relative">
-                                <span
-                                    class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">groups</span>
-                                <input type="number" name="kapasitas" required placeholder="0"
-                                    class="w-full pl-10 pr-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm">
-                            </div>
+                    {{-- Penanggung Jawab --}}
+                    <div class="space-y-1">
+                        <label class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Penanggung
+                            Jawab</label>
+                        <div class="relative">
+                            <span
+                                class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">person</span>
+                            <input name="pj" required placeholder="Nama Lengkap"
+                                class="w-full pl-10 pr-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm">
                         </div>
+                    </div>
 
-                        {{-- Tipe Lab --}}
-                        <div class="space-y-1">
-                            <label class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Tipe
-                                Lab</label>
-                            <select name="type" required x-model="newType"
-                                class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm appearance-none">
-                                <option value="praktikum">Praktikum</option>
-                                <option value="pengujian">Pengujian</option>
-                                <option value="sewa">Sewa</option>
-                            </select>
-                        </div>
+                    {{-- Status --}}
+                    <div class="space-y-1">
+                        <label
+                            class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Status</label>
+                        <select name="status" required
+                            class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm appearance-none">
+                            <option value="Tersedia">Tersedia</option>
+                            <option value="Digunakan">Digunakan</option>
+                            <option value="Maintenance">Maintenance</option>
+                        </select>
+                    </div>
 
-                        {{-- Lokasi --}}
-                        <div class="space-y-1 md:col-span-2">
-                            <label class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Lokasi /
-                                Gedung</label>
-                            <div class="relative">
-                                <span
-                                    class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">apartment</span>
-                                <input name="lokasi" required placeholder="Gedung A, Lantai 2"
-                                    class="w-full pl-10 pr-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm">
-                            </div>
-                        </div>
-
-                        {{-- Penanggung Jawab --}}
-                        <div class="space-y-1">
-                            <label
-                                class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Penanggung
-                                Jawab</label>
-                            <div class="relative">
-                                <span
-                                    class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">person</span>
-                                <input name="pj" required placeholder="Nama Lengkap"
-                                    class="w-full pl-10 pr-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm">
-                            </div>
-                        </div>
-
-                        {{-- Status --}}
-                        <div class="space-y-1">
-                            <label
-                                class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Status</label>
-                            <select name="status" required
-                                class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm appearance-none">
-                                <option value="Tersedia">Tersedia</option>
-                                <option value="Digunakan">Digunakan</option>
-                                <option value="Maintenance">Maintenance</option>
-                            </select>
-                        </div>
-
-                        {{-- Foto Lab --}}
-                        <div class="space-y-1 md:col-span-2">
-                            <label class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Foto
-                                Lab</label>
-                            <div
-                                class="mt-0.5 flex justify-center px-4 py-3 border-2 border-gray-300 border-dashed rounded-lg hover:border-blue-400 transition-colors bg-gray-50">
-                                <div class="space-y-0.5 text-center">
-                                    <span class="material-symbols-outlined text-2xl text-gray-400">image</span>
-                                    <div class="flex text-xs text-gray-600">
-                                        <label
-                                            class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
-                                            <span>Upload file</span>
-                                            <input name="foto" type="file" class="sr-only" accept="image/*">
-                                        </label>
-                                    </div>
+                    {{-- Foto Lab --}}
+                    <div class="space-y-1 md:col-span-2">
+                        <label class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Foto
+                            Lab</label>
+                        <div
+                            class="mt-0.5 flex justify-center px-4 py-3 border-2 border-gray-300 border-dashed rounded-lg hover:border-blue-400 transition-colors bg-gray-50">
+                            <div class="space-y-0.5 text-center">
+                                <span class="material-symbols-outlined text-2xl text-gray-400">image</span>
+                                <div class="flex text-xs text-gray-600">
+                                    <label
+                                        class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
+                                        <span>Upload file</span>
+                                        <input name="foto" type="file" class="sr-only" accept="image/*">
+                                    </label>
                                 </div>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <div class="flex justify-end gap-3 mt-4">
-                        <button type="button" @click="openCreate = false"
-                            class="px-5 py-2 text-sm text-gray-600 font-semibold hover:bg-gray-100 rounded-lg transition">
-                            Batal
-                        </button>
-                        <button type="submit"
-                            class="px-6 py-2 text-sm bg-blue-600 text-white font-bold rounded-lg shadow-md hover:bg-blue-700 transition active:scale-95">
-                            Simpan Lab
-                        </button>
-                    </div>
-                </form>
-            </div>
+                <div class="flex justify-end gap-3 mt-4">
+                    <button type="button" @click="openCreate = false"
+                        class="px-5 py-2 text-sm text-gray-600 font-semibold hover:bg-gray-100 rounded-lg transition">
+                        Batal
+                    </button>
+                    <button type="submit"
+                        class="px-6 py-2 text-sm bg-blue-600 text-white font-bold rounded-lg shadow-md hover:bg-blue-700 transition active:scale-95">
+                        Simpan Lab
+                    </button>
+                </div>
+            </form>
         </div>
+    </div>
 
 
 
-        {{-- ================= MODAL EDIT ================= --}}
-        <div x-show="openEdit" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 scale-90"
-            x-transition:enter-end="opacity-100 scale-100" x-transition:leave="ease-in duration-200"
-            x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-90"
-            class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+    {{-- ================= MODAL EDIT ================= --}}
+    <div x-show="openEdit" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 scale-90"
+        x-transition:enter-end="opacity-100 scale-100" x-transition:leave="ease-in duration-200"
+        x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-90"
+        class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
 
-            <div @click.outside="openEdit = false" class="bg-white w-[34rem] p-6 rounded-xl shadow-lg">
+        <div @click.outside="openEdit = false" class="bg-white w-[34rem] p-6 rounded-xl shadow-lg">
 
-                <h2 class="text-xl font-bold mb-4">Edit Laboratorium</h2>
+            <h2 class="text-xl font-bold mb-4">Edit Laboratorium</h2>
 
-                <form :action="`/labs/${editData.id}`" method="POST" enctype="multipart/form-data">
-                    @csrf @method('PUT')
+            <form :action="`/labs/${editData.id}`" method="POST" enctype="multipart/form-data">
+                @csrf @method('PUT')
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
-                        {{-- Nama Lab --}}
-                        <div class="space-y-1">
-                            <label class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Nama
-                                Laboratorium</label>
-                            <input name="name" x-model="editData.name" required placeholder="Contoh: Lab Komputer 1"
-                                class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
+                    {{-- Nama Lab --}}
+                    <div class="space-y-1">
+                        <label class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Nama
+                            Laboratorium</label>
+                        <input name="name" x-model="editData.name" required placeholder="Contoh: Lab Komputer 1"
+                            class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm">
+                    </div>
+
+                    {{-- Kode Lab --}}
+                    <div class="space-y-1">
+                        <label class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Kode
+                            Lab</label>
+                        <input name="kode_lab" x-model="editData.kode_lab" required placeholder="Contoh: LK-01"
+                            class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm">
+                    </div>
+
+                    {{-- Kapasitas --}}
+                    <div class="space-y-1">
+                        <label
+                            class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Kapasitas</label>
+                        <div class="relative">
+                            <span
+                                class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">groups</span>
+                            <input type="number" name="kapasitas" x-model="editData.kapasitas" required placeholder="0"
+                                class="w-full pl-10 pr-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm">
                         </div>
+                    </div>
 
-                        {{-- Kode Lab --}}
-                        <div class="space-y-1">
-                            <label class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Kode
-                                Lab</label>
-                            <input name="kode_lab" x-model="editData.kode_lab" required placeholder="Contoh: LK-01"
-                                class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm">
+                    {{-- Tipe Lab --}}
+                    <div class="space-y-1">
+                        <label class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Tipe
+                            Lab</label>
+                        <select name="type" x-model="editData.type" required
+                            class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm appearance-none">
+                            <option value="praktikum">Praktikum</option>
+                            <option value="pengujian">Pengujian</option>
+                            <option value="sewa">Sewa</option>
+                        </select>
+                    </div>
+
+                    {{-- Lokasi --}}
+                    <div class="space-y-1 md:col-span-2">
+                        <label class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Lokasi /
+                            Gedung</label>
+                        <div class="relative">
+                            <span
+                                class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">apartment</span>
+                            <input name="lokasi" x-model="editData.lokasi" required placeholder="Gedung A, Lantai 2"
+                                class="w-full pl-10 pr-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm">
                         </div>
+                    </div>
 
-                        {{-- Prodi (khusus superadmin) --}}
-                        @if(auth()->user()->role === 'superadmin')
-                            <div class="space-y-1 relative md:col-span-2" x-show="editData.type === 'praktikum'"
-                                x-transition>
-                                <label class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Program
-                                    Studi</label>
-                                <input type="hidden" name="prodi_id" x-model="editData.prodi_id">
-                                <div class="relative">
-                                    <span
-                                        class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">school</span>
-                                    <input type="text" x-model="editData.prodi" @input="filterProdi(true)"
-                                        @focus="filterProdi(true)" placeholder="Cari program studi..." autocomplete="off"
-                                        class="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm">
+                    {{-- Penanggung Jawab --}}
+                    <div class="space-y-1">
+                        <label class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">P.
+                            Jawab</label>
+                        <div class="relative">
+                            <span
+                                class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">person</span>
+                            <input name="pj" x-model="editData.pj" required placeholder="Nama Lengkap"
+                                class="w-full pl-10 pr-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm">
+                        </div>
+                    </div>
+
+                    {{-- Status --}}
+                    <div class="space-y-1">
+                        <label
+                            class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Status</label>
+                        <select name="status" x-model="editData.status" required
+                            class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm appearance-none">
+                            <option value="Tersedia">Tersedia</option>
+                            <option value="Digunakan">Digunakan</option>
+                            <option value="Maintenance">Maintenance</option>
+                        </select>
+                    </div>
+
+                    {{-- Foto Lab --}}
+                    <div class="space-y-1 md:col-span-2">
+                        <label class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Foto
+                            Lab</label>
+
+                        <template x-if="editData.foto">
+                            <div class="mb-2 flex items-center gap-3 bg-blue-50 p-2 rounded-lg border border-blue-100">
+                                <img :src="'/storage/' + editData.foto"
+                                    class="w-12 h-12 object-cover rounded shadow-sm">
+                                <div class="text-[10px]">
+                                    <p class="font-semibold text-blue-800 uppercase tracking-tight">Foto Saat Ini
+                                    </p>
                                 </div>
-                                <ul x-show="filteredProdi.length > 0" @click.outside="filteredProdi = []"
-                                    class="absolute z-[70] bg-white border border-gray-200 mt-1 w-full rounded-xl shadow-xl max-h-48 overflow-y-auto py-2 divide-y divide-gray-50">
-                                    <template x-for="item in filteredProdi" :key="item.id">
-                                        <li @click="selectProdi(item, true)"
-                                            class="px-4 py-2.5 hover:bg-blue-50 cursor-pointer transition flex items-center justify-between group">
-                                            <span class="text-gray-700 group-hover:text-blue-700 font-medium"
-                                                x-text="item.name"></span>
-                                            <span
-                                                class="material-symbols-outlined text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity">check_circle</span>
-                                        </li>
-                                    </template>
-                                </ul>
                             </div>
-                        @endif
+                        </template>
 
-                        {{-- Kapasitas --}}
-                        <div class="space-y-1">
-                            <label
-                                class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Kapasitas</label>
-                            <div class="relative">
-                                <span
-                                    class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">groups</span>
-                                <input type="number" name="kapasitas" x-model="editData.kapasitas" required
-                                    placeholder="0"
-                                    class="w-full pl-10 pr-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm">
-                            </div>
-                        </div>
-
-                        {{-- Tipe Lab --}}
-                        <div class="space-y-1">
-                            <label class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Tipe
-                                Lab</label>
-                            <select name="type" x-model="editData.type" required
-                                class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm appearance-none">
-                                <option value="praktikum">Praktikum</option>
-                                <option value="pengujian">Pengujian</option>
-                                <option value="sewa">Sewa</option>
-                            </select>
-                        </div>
-
-                        {{-- Lokasi --}}
-                        <div class="space-y-1 md:col-span-2">
-                            <label class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Lokasi /
-                                Gedung</label>
-                            <div class="relative">
-                                <span
-                                    class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">apartment</span>
-                                <input name="lokasi" x-model="editData.lokasi" required placeholder="Gedung A, Lantai 2"
-                                    class="w-full pl-10 pr-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm">
-                            </div>
-                        </div>
-
-                        {{-- Penanggung Jawab --}}
-                        <div class="space-y-1">
-                            <label class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">P.
-                                Jawab</label>
-                            <div class="relative">
-                                <span
-                                    class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">person</span>
-                                <input name="pj" x-model="editData.pj" required placeholder="Nama Lengkap"
-                                    class="w-full pl-10 pr-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm">
-                            </div>
-                        </div>
-
-                        {{-- Status --}}
-                        <div class="space-y-1">
-                            <label
-                                class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Status</label>
-                            <select name="status" x-model="editData.status" required
-                                class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm appearance-none">
-                                <option value="Tersedia">Tersedia</option>
-                                <option value="Digunakan">Digunakan</option>
-                                <option value="Maintenance">Maintenance</option>
-                            </select>
-                        </div>
-
-                        {{-- Foto Lab --}}
-                        <div class="space-y-1 md:col-span-2">
-                            <label class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Foto
-                                Lab</label>
-
-                            <template x-if="editData.foto">
-                                <div
-                                    class="mb-2 flex items-center gap-3 bg-blue-50 p-2 rounded-lg border border-blue-100">
-                                    <img :src="'/storage/' + editData.foto"
-                                        class="w-12 h-12 object-cover rounded shadow-sm">
-                                    <div class="text-[10px]">
-                                        <p class="font-semibold text-blue-800 uppercase tracking-tight">Foto Saat Ini
-                                        </p>
-                                    </div>
-                                </div>
-                            </template>
-
-                            <div
-                                class="mt-0.5 flex justify-center px-4 py-2 border-2 border-gray-300 border-dashed rounded-lg hover:border-blue-400 transition-colors bg-gray-50">
-                                <div class="space-y-0.5 text-center">
-                                    <span class="material-symbols-outlined text-xl text-gray-400">upload_file</span>
-                                    <div class="flex text-xs text-gray-600 text-center justify-center">
-                                        <label
-                                            class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
-                                            <span>Upload baru</span>
-                                            <input name="foto" type="file" class="sr-only" accept="image/*">
-                                        </label>
-                                    </div>
+                        <div
+                            class="mt-0.5 flex justify-center px-4 py-2 border-2 border-gray-300 border-dashed rounded-lg hover:border-blue-400 transition-colors bg-gray-50">
+                            <div class="space-y-0.5 text-center">
+                                <span class="material-symbols-outlined text-xl text-gray-400">upload_file</span>
+                                <div class="flex text-xs text-gray-600 text-center justify-center">
+                                    <label
+                                        class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
+                                        <span>Upload baru</span>
+                                        <input name="foto" type="file" class="sr-only" accept="image/*">
+                                    </label>
                                 </div>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <div class="flex justify-end gap-3 mt-4">
-                        <button type="button" @click="openEdit = false"
-                            class="px-5 py-2 text-sm text-gray-600 font-semibold hover:bg-gray-100 rounded-lg transition">
-                            Batal
-                        </button>
-                        <button type="submit"
-                            class="px-6 py-2 text-sm bg-blue-600 text-white font-bold rounded-lg shadow-md hover:bg-blue-700 transition active:scale-95">
-                            Update Lab
-                        </button>
-                    </div>
-                </form>
-            </div>
+                <div class="flex justify-end gap-3 mt-4">
+                    <button type="button" @click="openEdit = false"
+                        class="px-5 py-2 text-sm text-gray-600 font-semibold hover:bg-gray-100 rounded-lg transition">
+                        Batal
+                    </button>
+                    <button type="submit"
+                        class="px-6 py-2 text-sm bg-blue-600 text-white font-bold rounded-lg shadow-md hover:bg-blue-700 transition active:scale-95">
+                        Update Lab
+                    </button>
+                </div>
+            </form>
         </div>
+    </div>
 
 
     </div>
@@ -582,43 +503,6 @@
                     // Membuat salinan data agar perubahan di modal tidak langsung mempengaruhi tampilan grid sebelum disubmit
                     this.editData = { ...lab };
                     this.openEdit = true;
-                },
-
-                searchProdi: "",
-                selectedProdiId: "", // Untuk create form
-                filteredProdi: [],
-                // Data dari controller sekarang adalah array of objects {id, name}
-                allProdi: @json($prodiList),
-
-
-                filterProdi(isEdit = false) {
-                    const q = isEdit ? this.editData.prodi : this.searchProdi;
-                    if (!q && q !== "") {
-                        this.filteredProdi = [];
-                        return;
-                    }
-
-                    // Show all if empty or on focus
-                    if (q === "") {
-                        this.filteredProdi = this.allProdi.slice(0, 10);
-                        return;
-                    }
-
-                    const term = q.toLowerCase();
-                    this.filteredProdi = this.allProdi.filter(p =>
-                        p.name.toLowerCase().includes(term)
-                    ).slice(0, 10);
-                },
-
-                selectProdi(item, isEdit = false) {
-                    if (isEdit) {
-                        this.editData.prodi = item.name;
-                        this.editData.prodi_id = item.id;
-                    } else {
-                        this.searchProdi = item.name;
-                        this.selectedProdiId = item.id;
-                    }
-                    this.filteredProdi = [];
                 },
 
                 init() {

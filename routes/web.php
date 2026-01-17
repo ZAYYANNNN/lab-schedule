@@ -8,12 +8,13 @@ use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\BorrowingController;
 use App\Http\Controllers\LabController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\LabRentalController;
 
 Route::get('/', function () {
     if (auth()->check()) {
-        return redirect()->route('dashboard');
+        return redirect()->route('schedules.index');
     }
-    return view('welcome');
+    return redirect()->route('login');
 });
 
 Route::middleware('guest')->group(function () {
@@ -46,4 +47,7 @@ Route::middleware(['auth', 'labaccess'])->group(function () {
 
     // Borrowings
     Route::resource('borrowings', BorrowingController::class);
+
+    // Lab Rentals (Sewa Lab)
+    Route::resource('lab-rentals', LabRentalController::class);
 });
