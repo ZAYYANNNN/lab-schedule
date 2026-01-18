@@ -211,37 +211,39 @@
                     </div>
 
                     {{-- PRODI/LAB FILTERS --}}
-                    <h3 class="text-sm font-bold text-gray-800 mb-4 flex items-center">
-                        <span class="material-symbols-outlined text-blue-600 mr-2 text-[20px]">
-                            meeting_room
-                        </span>
-                        Filter Lab
-                    </h3>
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
+                        <h3 class="text-sm font-bold text-gray-800 mb-4 flex items-center">
+                            <span class="material-symbols-outlined text-blue-600 mr-2 text-[20px]">
+                                meeting_room
+                            </span>
+                            Filter Lab
+                        </h3>
 
-                    <div class="space-y-4 max-h-[400px] overflow-y-auto pr-2 scrollbar-thin">
-                        <div class="space-y-2">
-                            @foreach($allLabs as $lab)
-                                <label
-                                    class="flex items-center cursor-pointer group p-2.5 hover:bg-blue-50/50 rounded-2xl border border-transparent hover:border-blue-100 transition-all duration-300">
-                                    <input type="checkbox" name="lab_ids[]" value="{{ $lab->id }}" x-model="selectedLabs"
-                                        @change="document.getElementById('filterForm').submit()"
-                                        class="w-5 h-5 rounded-lg border-slate-200 text-blue-600 focus:ring-blue-500 shadow-sm transition-all">
-                                    <span
-                                        class="ml-3 text-sm font-bold text-slate-700 group-hover:text-blue-600 transition">{{ $lab->name }}</span>
-                                </label>
-                            @endforeach
+                        <div class="space-y-4 max-h-[400px] overflow-y-auto pr-2 scrollbar-thin">
+                            <div class="space-y-2">
+                                @foreach($allLabs as $lab)
+                                    <label
+                                        class="flex items-center cursor-pointer group p-2.5 hover:bg-blue-50/50 rounded-2xl border border-transparent hover:border-blue-100 transition-all duration-300">
+                                        <input type="checkbox" name="lab_ids[]" value="{{ $lab->id }}" x-model="selectedLabs"
+                                            @change="document.getElementById('filterForm').submit()"
+                                            class="w-5 h-5 rounded-lg border-slate-200 text-blue-600 focus:ring-blue-500 shadow-sm transition-all">
+                                        <span
+                                            class="ml-3 text-sm font-bold text-slate-700 group-hover:text-blue-600 transition">{{ $lab->name }}</span>
+                                    </label>
+                                @endforeach
+                            </div>
                         </div>
+
+                        @if(!empty($selectedProdiIds) || !empty($selectedLabIds))
+                            <div class="mt-8 pt-6 border-t border-slate-100">
+                                <a href="{{ route('schedules.index', ['date' => $selectedDate]) }}"
+                                    class="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-slate-50 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition-all font-black text-[10px] uppercase tracking-[0.2em] border border-slate-100 hover:border-rose-100">
+                                    <span class="material-symbols-outlined text-[18px]">restart_alt</span>
+                                    Reset Semua Filter
+                                </a>
+                            </div>
+                        @endif
                     </div>
-
-                    @if(!empty($selectedProdiIds) || !empty($selectedLabIds))
-                        <div class="mt-8 pt-6 border-t border-slate-100">
-                            <a href="{{ route('schedules.index', ['date' => $selectedDate]) }}"
-                                class="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-slate-50 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition-all font-black text-[10px] uppercase tracking-[0.2em] border border-slate-100 hover:border-rose-100">
-                                <span class="material-symbols-outlined text-[18px]">restart_alt</span>
-                                Reset Semua Filter
-                            </a>
-                        </div>
-                    @endif
                 </form>
             </aside>
 
