@@ -12,8 +12,8 @@ class User extends Authenticatable
         'password',
         'role',
         'prodi',
+        'prodi',
         'prodi_id',
-        'lab_id'
     ];
 
     public function borrowings()
@@ -43,7 +43,7 @@ class User extends Authenticatable
 
     public function lab()
     {
-        return $this->belongsTo(Lab::class, 'lab_id');
+        return $this->hasOne(Lab::class, 'admin_id');
     }
 
     public function hasRentalAccess()
@@ -52,8 +52,11 @@ class User extends Authenticatable
             return true;
         }
 
-        if ($this->role === 'admin' && $this->lab_id) {
-            return $this->lab && $this->lab->type === 'sewa';
+        if ($this->role === 'admin') {
+            return Lab::where('admin_id', $this->id)
+                ->whereHas('type', function ($q) {
+                    $q->where('slug', 'kalibrasi');
+                })->exists();
         }
 
         return false;
