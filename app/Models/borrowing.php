@@ -15,7 +15,7 @@ class Borrowing extends Model
     protected $fillable = [
         'user_id',
         'nama_peminjam',
-        'nim',
+        'nomor_identitas',
         'lab_id',
         'asset_id',
         'borrow_date',
@@ -23,7 +23,7 @@ class Borrowing extends Model
         'return_date',
         'return_time',
         'actual_return_datetime',
-        'status',
+        'status_id',
         'notes',
     ];
 
@@ -48,12 +48,18 @@ class Borrowing extends Model
         return $this->belongsTo(Lab::class, 'lab_id');
     }
 
+    public function status()
+    {
+        return $this->belongsTo(BorrowingStatus::class, 'status_id');
+    }
+
     /**
      * Check if borrowing is overdue
      */
     public function isOverdue()
     {
-        if ($this->status === 'returned') {
+        // Don't mark as overdue if status is pending, returned, or rejected
+        if ($this->status && in_array($this->status->slug, ['pending', 'returned', 'rejected'])) {
             return false;
         }
 

@@ -17,7 +17,13 @@ class ScheduleController extends Controller
             $allLabs = \App\Models\Lab::all();
         } else {
             $allProdis = \App\Models\Prodi::where('id', $user->prodi_id)->with('labs')->get();
-            $allLabs = \App\Models\Lab::where('prodi_id', $user->prodi_id)->get();
+
+            $managedLab = \App\Models\Lab::where('admin_id', $user->id)->first();
+            if ($managedLab) {
+                $allLabs = collect([$managedLab]);
+            } else {
+                $allLabs = \App\Models\Lab::where('prodi_id', $user->prodi_id)->get();
+            }
         }
 
         $allProdiIds = $allProdis->pluck('id')->toArray();
@@ -94,7 +100,7 @@ class ScheduleController extends Controller
         }
 
         $schedules = $scheduleQuery->get();
-        
+
         // Fetch all dates that have schedules for the markers
         $scheduledDates = \App\Models\Schedules::query()
             ->selectRaw('DISTINCT date')
@@ -132,7 +138,12 @@ class ScheduleController extends Controller
         if (auth()->user()->role === 'superadmin') {
             $labs = \App\Models\Lab::all();
         } else {
-            $labs = \App\Models\Lab::where('prodi_id', auth()->user()->prodi_id)->get();
+            $managedLab = \App\Models\Lab::where('admin_id', auth()->id())->first();
+            if ($managedLab) {
+                $labs = collect([$managedLab]);
+            } else {
+                $labs = \App\Models\Lab::where('prodi_id', auth()->user()->prodi_id)->get();
+            }
         }
 
         return view('schedules.create', compact('labs'));
@@ -156,7 +167,7 @@ class ScheduleController extends Controller
                 // A new schedule (StartA, EndA) overlaps with existing (StartB, EndB) if:
                 // StartA < EndB AND EndA > StartB
                 $query->where('start_time', '<', $request->end_time)
-                      ->where('end_time', '>', $request->start_time);
+                    ->where('end_time', '>', $request->start_time);
             })
             ->exists();
 
@@ -179,7 +190,12 @@ class ScheduleController extends Controller
         if (auth()->user()->role === 'superadmin') {
             $labs = \App\Models\Lab::all();
         } else {
-            $labs = \App\Models\Lab::where('prodi_id', auth()->user()->prodi_id)->get();
+            $managedLab = \App\Models\Lab::where('admin_id', auth()->id())->first();
+            if ($managedLab) {
+                $labs = collect([$managedLab]);
+            } else {
+                $labs = \App\Models\Lab::where('prodi_id', auth()->user()->prodi_id)->get();
+            }
         }
 
         return view('schedules.edit', compact('schedule', 'labs'));

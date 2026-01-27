@@ -16,9 +16,14 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
+                // Master tables first
+            LabTypeSeeder::class,
+            LabStatusSeeder::class,
+            BorrowingStatusSeeder::class,
+            RentalStatusSeeder::class,
+
+                // Then other seeders
             SuperAdminSeeder::class,
-            ProdiSeeder::class,
-            AdminTISeeder::class,
         ]);
     }
 

@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Lab;
 use App\Models\Prodi;
+use App\Models\LabType;
+use App\Models\LabStatus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
@@ -17,16 +19,12 @@ class LabController extends Controller
         $q = $r->search;
 
         $query = Lab::query()
-            ->select(['id', 'name', 'kode_lab', 'lokasi', 'type', 'prodi', 'prodi_id', 'kapasitas', 'pj', 'status', 'foto'])
+            ->with(['type', 'status', 'admin'])
+            ->select(['id', 'name', 'kode_lab', 'lokasi', 'type_id', 'prodi', 'prodi_id', 'kapasitas', 'admin_id', 'status_id', 'foto'])
             ->when(
-                $user->role === 'admin' && $user->lab_id,
+                $user->role === 'admin',
                 fn($q2) =>
-                $q2->where('id', $user->lab_id)
-            )
-            ->when(
-                $user->role === 'admin' && !$user->lab_id && $user->prodi_id,
-                fn($q2) =>
-                $q2->where('prodi_id', $user->prodi_id)
+                $q2->where('admin_id', $user->id)
             )
             ->when($q, function ($q2) use ($q) {
                 $q2->where(function ($wh) use ($q) {
@@ -45,11 +43,13 @@ class LabController extends Controller
             ->select('id', 'name')
             ->get();
 
-        if ($r->ajax() || $r->has('ajax')) {
-            return response()->json($labs);
-        }
+        // Load master tables
+        // Load master tables
+        $labTypes = LabType::all();
+        $labStatuses = LabStatus::all();
+        $admins = \App\Models\User::where('role', 'admin')->get();
 
-        return view('labs.index', compact('labs', 'prodiList'));
+        return view('labs.index', compact('labs', 'prodiList', 'labTypes', 'labStatuses', 'admins'));
     }
 
 
@@ -65,12 +65,12 @@ class LabController extends Controller
         // Validasi dasar
         $rules = [
             'name' => 'required|string|max:255',
-            'kode_lab' => 'required|string|max:255',
+            'kode_lab' => 'required|string|max:255|unique:labs,kode_lab',
             'lokasi' => 'required|string',
             'kapasitas' => 'required|integer|min:1',
-            'pj' => 'nullable|string',
-            'status' => 'required|in:Tersedia,Digunakan,Maintenance',
-            'type' => 'required|in:praktikum,pengujian,sewa',
+            'admin_id' => 'nullable|exists:users,id',
+            'status_id' => 'required|exists:lab_statuses,id',
+            'type_id' => 'required|exists:lab_types,id',
             'prodi_id' => 'nullable|exists:prodis,id', // Superadmin wajib pilih prodi (atau null jika umum, tergantung aturan)
             'foto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
         ];
@@ -82,9 +82,9 @@ class LabController extends Controller
             'kode_lab',
             'lokasi',
             'kapasitas',
-            'pj',
-            'type',
-            'status'
+            'admin_id',
+            'type_id',
+            'status_id'
         ]);
 
         // Logic Prodi untuk Superadmin
@@ -111,19 +111,19 @@ class LabController extends Controller
     {
         // Check permission for admin
         if (auth()->user()->role === 'admin') {
-            if ($lab->id !== auth()->user()->lab_id && $lab->prodi_id !== auth()->user()->prodi_id) {
+            if ($lab->admin_id !== auth()->user()->id) {
                 abort(403, 'Unauthorized action.');
             }
         }
 
         $rules = [
             'name' => 'required|string|max:255',
-            'kode_lab' => 'required|string|max:255',
+            'kode_lab' => 'required|string|max:255|unique:labs,kode_lab,' . $lab->id,
             'lokasi' => 'required|string',
             'kapasitas' => 'required|integer|min:1',
-            'pj' => 'nullable|string',
-            'type' => 'required|in:praktikum,pengujian,sewa',
-            'status' => 'required|in:Tersedia,Digunakan,Maintenance',
+            'admin_id' => 'nullable|exists:users,id',
+            'type_id' => 'required|exists:lab_types,id',
+            'status_id' => 'required|exists:lab_statuses,id',
             'foto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
         ];
 
@@ -138,9 +138,9 @@ class LabController extends Controller
             'kode_lab',
             'lokasi',
             'kapasitas',
-            'pj',
-            'type',
-            'status'
+            'admin_id',
+            'type_id',
+            'status_id'
         ]);
 
         if (auth()->user()->role === 'superadmin') {
@@ -175,7 +175,7 @@ class LabController extends Controller
     {
         // Check permission for admin
         if (auth()->user()->role === 'admin') {
-            if ($lab->id !== auth()->user()->lab_id && $lab->prodi_id !== auth()->user()->prodi_id) {
+            if ($lab->admin_id !== auth()->user()->id) {
                 abort(403, 'Unauthorized action.');
             }
         }

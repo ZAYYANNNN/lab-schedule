@@ -53,7 +53,7 @@
                 class="group flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all duration-300 {{ request()->routeIs('lab-rentals.*') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200' }}">
                 <span
                     class="material-symbols-outlined text-[22px] transition-transform group-hover:scale-110">real_estate_agent</span>
-                <span class="text-sm font-bold tracking-tight">Sewa Lab</span>
+                <span class="text-sm font-bold tracking-tight">Kalibrasi</span>
             </a>
         @endif
 

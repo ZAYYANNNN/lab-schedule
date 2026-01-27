@@ -11,7 +11,7 @@ class UserController extends Controller
 {
     public function index()
     {
-        $admins = User::with(['lab'])->where('role', 'admin')->get();
+        $admins = User::where('role', 'admin')->get();
         $labs = Lab::orderBy('name')->get();
 
         return view('users.index', compact('admins', 'labs'));
@@ -22,14 +22,12 @@ class UserController extends Controller
         $r->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users',
-            'lab_id' => 'nullable|exists:labs,id', // direct assignment
             'password' => 'required|min:5',
         ]);
 
         User::create([
             'name' => $r->name,
             'email' => $r->email,
-            'lab_id' => $r->lab_id, // direct assignment
             'role' => 'admin',
             'password' => bcrypt($r->password),
         ]);
@@ -48,14 +46,12 @@ class UserController extends Controller
         $r->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $user->id,
-            'lab_id' => 'nullable|exists:labs,id', // direct assignment
             'password' => 'nullable|min:5',
         ]);
 
         $data = [
             'name' => $r->name,
             'email' => $r->email,
-            'lab_id' => $r->lab_id, // direct assignment
         ];
 
         if ($r->filled('password')) {

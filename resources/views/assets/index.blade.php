@@ -196,14 +196,7 @@
                                 </div>
                             </div>
                         </div>
-                        @if(in_array(auth()->user()->role, ['admin', 'superadmin']))
-                            <button @click="openCreateModal()"
-                                class="relative z-10 bg-slate-900 text-white px-8 py-4 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] flex items-center gap-3 shadow-2xl shadow-slate-900/20 hover:bg-blue-600 hover:shadow-blue-200 transition-all active:scale-95 group/btn">
-                                <span
-                                    class="material-symbols-outlined text-xl group-hover/btn:rotate-90 transition-transform">add</span>
-                                Tambah Aset
-                            </button>
-                        @endif
+                        <!-- Button removed as per request -->
                     </div>
                 </template>
 

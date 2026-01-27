@@ -17,7 +17,7 @@ class LabRental extends Model
         'purpose',
         'rental_date',
         'return_date',
-        'status',
+        'status_id',
         'notes'
     ];
 
@@ -29,5 +29,10 @@ class LabRental extends Model
     public function lab()
     {
         return $this->belongsTo(Lab::class);
+    }
+
+    public function status()
+    {
+        return $this->belongsTo(RentalStatus::class, 'status_id');
     }
 }

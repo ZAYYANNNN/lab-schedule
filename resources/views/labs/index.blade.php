@@ -84,10 +84,10 @@
                                 {{-- Status & Type Badge --}}
                                 <div class="absolute top-2 right-2 flex flex-col gap-1 items-end">
                                     <span class="px-3 py-1 text-xs font-semibold rounded-full shadow-md" :class="{
-                                            'bg-green-300 text-gray-800': lab.status=='Tersedia',
-                                            'bg-red-300 text-gray-800': lab.status=='Maintenance',
-                                            'bg-yellow-300 text-gray-800': lab.status=='Digunakan'
-                                        }" x-text="lab.status"></span>
+                                            'bg-green-300 text-gray-800': lab.status?.slug == 'tersedia',
+                                            'bg-red-300 text-gray-800': lab.status?.slug == 'maintenance',
+                                            'bg-yellow-300 text-gray-800': lab.status?.slug == 'digunakan'
+                                        }" x-text="lab.status?.name || '-'"></span>
                                 </div>
                             </div>
 
@@ -105,7 +105,7 @@
                                     </p>
                                     <p class="text-gray-600 text-sm flex items-center gap-1.5">
                                         <span class="material-symbols-outlined text-gray-400 text-lg">category</span>
-                                        <span class="capitalize" x-text="lab.type || '-'"></span>
+                                        <span class="capitalize" x-text="lab.type?.name || '-'"></span>
                                     </p>
                                 </div>
 
@@ -123,7 +123,7 @@
 
                                         <div class="text-sm text-gray-700">
                                             <span class="text-xs text-gray-500 block -mb-0.5">Penanggung Jawab</span>
-                                            <span class="font-medium" x-text="lab.pj"></span>
+                                            <span class="font-medium" x-text="lab.admin?.name || '-'"></span>
                                         </div>
                                     </div>
                                 </div>
@@ -214,11 +214,12 @@
                     <div class="space-y-1">
                         <label class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Tipe
                             Lab</label>
-                        <select name="type" required
+                        <select name="type_id" required
                             class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm appearance-none">
-                            <option value="praktikum">Praktikum</option>
-                            <option value="pengujian">Pengujian</option>
-                            <option value="sewa">Sewa</option>
+                            <option value="">Pilih Tipe Lab</option>
+                            @foreach($labTypes as $type)
+                                <option value="{{ $type->id }}">{{ $type->name }}</option>
+                            @endforeach
                         </select>
                     </div>
 
@@ -237,24 +238,26 @@
                     {{-- Penanggung Jawab --}}
                     <div class="space-y-1">
                         <label class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Penanggung
-                            Jawab</label>
-                        <div class="relative">
-                            <span
-                                class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">person</span>
-                            <input name="pj" required placeholder="Nama Lengkap"
-                                class="w-full pl-10 pr-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm">
-                        </div>
+                            Jawab (Admin)</label>
+                        <select name="admin_id" required
+                            class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm appearance-none">
+                            <option value="">Pilih Admin</option>
+                            @foreach($admins as $admin)
+                                <option value="{{ $admin->id }}">{{ $admin->name }}</option>
+                            @endforeach
+                        </select>
                     </div>
 
                     {{-- Status --}}
                     <div class="space-y-1">
                         <label
                             class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Status</label>
-                        <select name="status" required
+                        <select name="status_id" required
                             class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm appearance-none">
-                            <option value="Tersedia">Tersedia</option>
-                            <option value="Digunakan">Digunakan</option>
-                            <option value="Maintenance">Maintenance</option>
+                            <option value="">Pilih Status</option>
+                            @foreach($labStatuses as $status)
+                                <option value="{{ $status->id }}">{{ $status->name }}</option>
+                            @endforeach
                         </select>
                     </div>
 
@@ -340,11 +343,12 @@
                     <div class="space-y-1">
                         <label class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Tipe
                             Lab</label>
-                        <select name="type" x-model="editData.type" required
+                        <select name="type_id" x-model="editData.type_id" required
                             class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm appearance-none">
-                            <option value="praktikum">Praktikum</option>
-                            <option value="pengujian">Pengujian</option>
-                            <option value="sewa">Sewa</option>
+                            <option value="">Pilih Tipe Lab</option>
+                            @foreach($labTypes as $type)
+                                <option value="{{ $type->id }}">{{ $type->name }}</option>
+                            @endforeach
                         </select>
                     </div>
 
@@ -363,24 +367,26 @@
                     {{-- Penanggung Jawab --}}
                     <div class="space-y-1">
                         <label class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">P.
-                            Jawab</label>
-                        <div class="relative">
-                            <span
-                                class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">person</span>
-                            <input name="pj" x-model="editData.pj" required placeholder="Nama Lengkap"
-                                class="w-full pl-10 pr-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm">
-                        </div>
+                            Jawab (Admin)</label>
+                        <select name="admin_id" x-model="editData.admin_id" required
+                            class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm appearance-none">
+                            <option value="">Pilih Admin</option>
+                            @foreach($admins as $admin)
+                                <option value="{{ $admin->id }}">{{ $admin->name }}</option>
+                            @endforeach
+                        </select>
                     </div>
 
                     {{-- Status --}}
                     <div class="space-y-1">
                         <label
                             class="text-xs font-semibold text-gray-700 ml-0.5 uppercase tracking-wider">Status</label>
-                        <select name="status" x-model="editData.status" required
+                        <select name="status_id" x-model="editData.status_id" required
                             class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm appearance-none">
-                            <option value="Tersedia">Tersedia</option>
-                            <option value="Digunakan">Digunakan</option>
-                            <option value="Maintenance">Maintenance</option>
+                            <option value="">Pilih Status</option>
+                            @foreach($labStatuses as $status)
+                                <option value="{{ $status->id }}">{{ $status->name }}</option>
+                            @endforeach
                         </select>
                     </div>
 

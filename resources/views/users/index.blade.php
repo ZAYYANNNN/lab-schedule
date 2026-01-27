@@ -25,15 +25,7 @@
                             placeholder="email@contoh.com">
                     </div>
 
-                    <div class="mb-3">
-                        <label class="block font-semibold">Assign Lab (Opsional)</label>
-                        <select name="lab_id" class="w-full border p-2 rounded">
-                            <option value="">-- Tanpa Unit Lab --</option>
-                            @foreach($labs as $lab)
-                                <option value="{{ $lab->id }}">{{ $lab->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
+
 
                     <div>
                         <label class="block font-semibold">Password</label>
@@ -70,14 +62,7 @@
                                 <div class="font-bold text-gray-900">{{ $admin->name }}</div>
                                 <div class="text-gray-500 text-xs">{{ $admin->email }}</div>
                             </div>
-                            <div class="flex flex-col ml-4 gap-1">
-                                @if($admin->lab_id)
-                                    <span
-                                        class="px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-[9px] font-black uppercase tracking-widest">
-                                        {{ $admin->lab?->name }}
-                                    </span>
-                                @endif
-                            </div>
+
                         </div>
 
                         <div class="flex gap-2">
@@ -121,15 +106,7 @@
                             required>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="block font-semibold">Assign Lab</label>
-                        <select name="lab_id" x-model="editData.lab_id" class="w-full border p-2 rounded">
-                            <option value="">-- Tanpa Unit Lab --</option>
-                            @foreach($labs as $lab)
-                                <option value="{{ $lab->id }}">{{ $lab->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
+
 
                     <div class="mb-3">
                         <label class="block">Password Baru (Optional)</label>

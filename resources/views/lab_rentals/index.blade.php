@@ -1,4 +1,4 @@
-<x-app-layout title="Sewa Lab">
+<x-app-layout title="Kalibrasi (Sewa Lab)">
     <div class="max-w-[1600px] mx-auto py-2" x-data="rentalPage()">
 
         {{-- Modern Gradient Header --}}
@@ -16,10 +16,10 @@
                             Access</span>
                         <span class="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse"></span>
                     </div>
-                    <h1 class="text-4xl md:text-5xl font-black text-white tracking-tighter mb-3 leading-none">Sewa Lab
+                    <h1 class="text-4xl md:text-5xl font-black text-white tracking-tighter mb-3 leading-none">Kalibrasi
                     </h1>
                     <p class="text-indigo-100 font-medium text-base opacity-90 max-w-xl leading-relaxed">Kelola
-                        penyewaan laboratorium untuk kegiatan praktikum atau lainnya.</p>
+                        penyewaan dan jadwal kalibrasi laboratorium.</p>
                 </div>
                 <div class="flex flex-wrap items-center gap-4">
 
@@ -28,7 +28,7 @@
                             class="bg-white text-indigo-600 px-8 py-4 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] flex items-center gap-3 shadow-2xl shadow-indigo-900/10 hover:bg-slate-900 hover:text-white transition-all active:scale-95 group/btn">
                             <span
                                 class="material-symbols-outlined text-xl group-hover/btn:rotate-90 transition-transform">add</span>
-                            Sewa Lab Baru
+                            Buat Jadwal Kalibrasi
                         </button>
                     @endif
                 </div>
@@ -158,10 +158,9 @@
                             <select x-model="selectedStatus"
                                 class="rounded-2xl px-4 py-2 border bg-white text-sm font-bold">
                                 <option value="all">Semua Status</option>
-                                <option value="pending">Menunggu</option>
-                                <option value="approved">Disetujui</option>
-                                <option value="rejected">Ditolak</option>
-                                <option value="completed">Selesai</option>
+                                @foreach($rentalStatuses as $status)
+                                    <option value="{{ $status->slug }}">{{ $status->name }}</option>
+                                @endforeach
                             </select>
                         </div>
                         <div class="text-sm text-slate-400 font-medium">
@@ -232,7 +231,7 @@
                                         <td class="px-8 py-6">
                                             <span
                                                 class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] border shadow-sm"
-                                                :class="getStatusColor(r.status)" x-text="getStatusLabel(r.status)">
+                                                :class="getStatusColor(r.status?.slug)" x-text="r.status?.name || '-'">
                                             </span>
                                         </td>
                                         <td class="px-8 py-6 text-right">
@@ -279,166 +278,173 @@
                 </div>
             </div>
         </div>
-    </div>
 
-    {{-- ================= MODAL CREATE/EDIT ================= --}}
-    <div x-show="openModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 scale-90"
-        x-transition:enter-end="opacity-100 scale-100" x-transition:leave="ease-in duration-200"
-        x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-90"
-        class="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4" x-cloak>
+        {{-- ================= MODAL CREATE/EDIT ================= --}}
+        <div x-show="openModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 scale-90"
+            x-transition:enter-end="opacity-100 scale-100" x-transition:leave="ease-in duration-200"
+            x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-90"
+            class="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4" x-cloak>
 
-        <div @click.outside="closeModal()"
-            class="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl relative overflow-hidden ring-1 ring-black/5 animate-in fade-in zoom-in duration-300">
+            <div @click.outside="closeModal()"
+                class="bg-white w-full max-w-4xl rounded-[2.5rem] shadow-2xl relative overflow-hidden ring-1 ring-black/5 animate-in fade-in zoom-in duration-300">
 
-            {{-- Decorative Header --}}
-            <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full -mr-16 -mt-16 blur-2xl opacity-50">
+
+                {{-- Decorative Header --}}
+                <div
+                    class="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full -mr-16 -mt-16 blur-2xl opacity-50">
+                </div>
+
+                {{-- Modal Header --}}
+                <div class="px-8 pt-8 pb-6 border-b border-slate-50 relative">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-2xl font-black text-slate-900 tracking-tighter"
+                                x-text="editMode ? 'Edit Jadwal' : 'Jadwal Kalibrasi Baru'"></h2>
+                            <p class="text-slate-400 text-sm font-medium tracking-tight mt-1">Lengkapi data berikut.</p>
+                        </div>
+                        <button @click="closeModal()"
+                            class="w-11 h-11 rounded-2xl hover:bg-slate-50 text-slate-300 hover:text-rose-500 transition-all flex items-center justify-center group">
+                            <span
+                                class="material-symbols-outlined group-hover:rotate-90 transition-transform">close</span>
+                        </button>
+                    </div>
+                </div>
+
+                {{-- Form Content --}}
+                <form :action="editMode ? `/lab-rentals/${form.id}` : '{{ route('lab-rentals.store') }}'" method="POST"
+                    class="px-6 py-5">
+                    @csrf
+
+                    <input type="hidden" name="status_id" :value="form.status_id">
+
+                    <template x-if="editMode">
+                        @method('PUT')
+                    </template>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-4">
+                        {{-- Peminjam --}}
+                        <div class="space-y-2">
+                            <label
+                                class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Peminjam</label>
+                            <div class="relative group">
+                                <span
+                                    class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors text-xl">person</span>
+                                <input type="text" name="nama_peminjam" x-model="form.nama_peminjam" required
+                                    placeholder="Nama Lengkap"
+                                    class="w-full pl-12 pr-4 py-3.5 bg-slate-50/50 border-slate-100 rounded-2xl focus:bg-white focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 transition-all font-bold text-slate-700 shadow-inner">
+                            </div>
+                        </div>
+
+                        {{-- NIM --}}
+                        <div class="space-y-2">
+                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">NIM /
+                                ID</label>
+                            <div class="relative group">
+                                <span
+                                    class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors text-xl">badge</span>
+                                <input type="text" name="nim" x-model="form.nim" required placeholder="Nomor Induk"
+                                    class="w-full pl-12 pr-4 py-3.5 bg-slate-50/50 border-slate-100 rounded-2xl focus:bg-white focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 transition-all font-bold text-slate-700 shadow-inner">
+                            </div>
+                        </div>
+
+                        {{-- Laboratorium (Now span 1) --}}
+                        <div class="space-y-2">
+                            <label
+                                class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Laboratorium</label>
+                            <div class="relative group">
+                                <span
+                                    class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors text-xl">door_front</span>
+                                <select name="lab_id" x-model="form.lab_id" required
+                                    class="w-full pl-12 pr-10 py-3.5 bg-slate-50/50 border-slate-100 rounded-2xl focus:bg-white focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 transition-all font-bold text-slate-700 appearance-none shadow-inner cursor-pointer">
+                                    <option value="">Pilih Lab</option>
+                                    <template x-for="lab in allLabs" :key="lab.id">
+                                        <option :value="lab.id" x-text="lab.name"
+                                            :selected="String(lab.id) === String(form.lab_id)"></option>
+                                    </template>
+                                </select>
+                            </div>
+                        </div>
+
+                        {{-- Keperluan --}}
+                        <div class="md:col-span-3 space-y-2">
+                            <label
+                                class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Keperluan
+                                /
+                                Kegiatan</label>
+                            <div class="relative group">
+                                <span
+                                    class="material-symbols-outlined absolute left-4 top-4 text-slate-300 group-focus-within:text-indigo-500 transition-colors text-xl">description</span>
+                                <textarea name="purpose" x-model="form.purpose" required rows="2"
+                                    placeholder="Contoh: Praktikum Fisika Dasar, Rapat Hima..."
+                                    class="w-full pl-12 pr-4 py-3.5 bg-slate-50/50 border-slate-100 rounded-2xl focus:bg-white focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 transition-all font-bold text-slate-700 shadow-inner resize-none"></textarea>
+                            </div>
+                        </div>
+
+                        {{-- Tanggal Sewa --}}
+                        <div class="space-y-2">
+                            <label
+                                class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Mulai</label>
+                            <div class="relative group">
+                                <span
+                                    class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors text-xl">calendar_today</span>
+                                <input type="date" name="rental_date" x-model="form.rental_date" required
+                                    class="w-full pl-12 pr-4 py-3.5 bg-slate-50/50 border-slate-100 rounded-2xl focus:bg-white focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 transition-all font-bold text-slate-700 shadow-inner">
+                            </div>
+                        </div>
+
+                        {{-- Tanggal Selesai --}}
+                        <div class="space-y-2">
+                            <label
+                                class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Selesai</label>
+                            <div class="relative group">
+                                <span
+                                    class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors text-xl">event_available</span>
+                                <input type="date" name="return_date" x-model="form.return_date" required
+                                    class="w-full pl-12 pr-4 py-3.5 bg-slate-50/50 border-slate-100 rounded-2xl focus:bg-white focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 transition-all font-bold text-slate-700 shadow-inner">
+                            </div>
+                        </div>
+
+                        {{-- Status (Only for Edit Mode) - Span 3 or fit --}}
+                        <div class="md:col-span-3 space-y-3" x-show="editMode" x-transition>
+                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Status
+                                Sewa</label>
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                @foreach($rentalStatuses as $status)
+                                    <label class="cursor-pointer group">
+                                        <input type="radio" name="status_id" value="{{ $status->id }}"
+                                            x-model="form.status_id" class="peer sr-only">
+                                        <div
+                                            class="py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest text-center border transition-all peer-checked:bg-indigo-600 peer-checked:border-indigo-600 peer-checked:text-white border-slate-100 text-slate-400 hover:bg-slate-50 group-active:scale-95 shadow-sm">
+                                            <span>{{ $status->name }}</span>
+                                        </div>
+                                    </label>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        {{-- Catatan (Span 1 to sit next to Purpose or Dates) --}}
+                        <div class="space-y-2">
+                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Catatan
+                                Tambahan</label>
+                            <textarea name="notes" x-model="form.notes" rows="2" placeholder="Opsional..."
+                                class="w-full px-6 py-4 bg-slate-50/50 border-slate-100 rounded-3xl focus:bg-white focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 transition-all font-bold text-slate-700 shadow-inner resize-none"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between mt-10 pt-8 border-t border-slate-50">
+                        <button type="button" @click="closeModal()"
+                            class="px-8 py-4 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-slate-600 transition-colors">Batal</button>
+
+                        <button type="submit"
+                            class="px-10 py-4.5 bg-indigo-600 text-white font-black text-[11px] uppercase tracking-[0.2em] rounded-2xl shadow-xl shadow-indigo-200 hover:bg-slate-900 transition-all active:scale-95 flex items-center gap-3">
+                            <span class="material-symbols-outlined text-xl"
+                                x-text="editMode ? 'save' : 'done_all'"></span>
+                            <span x-text="editMode ? 'Simpan Perubahan' : 'Selesaikan'"></span>
+                        </button>
+                    </div>
+
+                </form>
             </div>
-
-            {{-- Modal Header --}}
-            <div class="px-8 pt-8 pb-6 border-b border-slate-50 relative">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h2 class="text-2xl font-black text-slate-900 tracking-tighter"
-                            x-text="editMode ? 'Edit Sewa Lab' : 'Sewa Lab Baru'"></h2>
-                        <p class="text-slate-400 text-sm font-medium tracking-tight mt-1">Lengkapi data berikut untuk
-                            penyewaan lab.</p>
-                    </div>
-                    <button @click="closeModal()"
-                        class="w-11 h-11 rounded-2xl hover:bg-slate-50 text-slate-300 hover:text-rose-500 transition-all flex items-center justify-center group">
-                        <span class="material-symbols-outlined group-hover:rotate-90 transition-transform">close</span>
-                    </button>
-                </div>
-            </div>
-
-            {{-- Form Content --}}
-            <form :action="editMode ? `/lab-rentals/${form.id}` : '{{ route('lab-rentals.store') }}'" method="POST"
-                class="px-8 py-8">
-                @csrf
-                <template x-if="editMode">
-                    @method('PUT')
-                </template>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                    {{-- Peminjam --}}
-                    <div class="space-y-2">
-                        <label
-                            class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Peminjam</label>
-                        <div class="relative group">
-                            <span
-                                class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors text-xl">person</span>
-                            <input type="text" name="nama_peminjam" x-model="form.nama_peminjam" required
-                                placeholder="Nama Lengkap"
-                                class="w-full pl-12 pr-4 py-3.5 bg-slate-50/50 border-slate-100 rounded-2xl focus:bg-white focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 transition-all font-bold text-slate-700 shadow-inner">
-                        </div>
-                    </div>
-
-                    {{-- NIM --}}
-                    <div class="space-y-2">
-                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">NIM /
-                            ID</label>
-                        <div class="relative group">
-                            <span
-                                class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors text-xl">badge</span>
-                            <input type="text" name="nim" x-model="form.nim" required placeholder="Nomor Induk"
-                                class="w-full pl-12 pr-4 py-3.5 bg-slate-50/50 border-slate-100 rounded-2xl focus:bg-white focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 transition-all font-bold text-slate-700 shadow-inner">
-                        </div>
-                    </div>
-
-                    {{-- Laboratorium --}}
-                    <div class="space-y-2 md:col-span-2">
-                        <label
-                            class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Laboratorium</label>
-                        <div class="relative group">
-                            <span
-                                class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors text-xl">door_front</span>
-                            <select name="lab_id" x-model="form.lab_id" required
-                                class="w-full pl-12 pr-10 py-3.5 bg-slate-50/50 border-slate-100 rounded-2xl focus:bg-white focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 transition-all font-bold text-slate-700 appearance-none shadow-inner cursor-pointer">
-                                <option value="">Pilih Lab</option>
-                                <template x-for="lab in allLabs" :key="lab.id">
-                                    <option :value="lab.id" x-text="lab.name"
-                                        :selected="String(lab.id) === String(form.lab_id)"></option>
-                                </template>
-                            </select>
-                        </div>
-                    </div>
-
-                    {{-- Keperluan --}}
-                    <div class="md:col-span-2 space-y-2">
-                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Keperluan /
-                            Kegiatan</label>
-                        <div class="relative group">
-                            <span
-                                class="material-symbols-outlined absolute left-4 top-4 text-slate-300 group-focus-within:text-indigo-500 transition-colors text-xl">description</span>
-                            <textarea name="purpose" x-model="form.purpose" required rows="2"
-                                placeholder="Contoh: Praktikum Fisika Dasar, Rapat Hima..."
-                                class="w-full pl-12 pr-4 py-3.5 bg-slate-50/50 border-slate-100 rounded-2xl focus:bg-white focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 transition-all font-bold text-slate-700 shadow-inner resize-none"></textarea>
-                        </div>
-                    </div>
-
-                    {{-- Tanggal Sewa --}}
-                    <div class="space-y-2">
-                        <label
-                            class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Mulai</label>
-                        <div class="relative group">
-                            <span
-                                class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors text-xl">calendar_today</span>
-                            <input type="date" name="rental_date" x-model="form.rental_date" required
-                                class="w-full pl-12 pr-4 py-3.5 bg-slate-50/50 border-slate-100 rounded-2xl focus:bg-white focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 transition-all font-bold text-slate-700 shadow-inner">
-                        </div>
-                    </div>
-
-                    {{-- Tanggal Selesai --}}
-                    <div class="space-y-2">
-                        <label
-                            class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Selesai</label>
-                        <div class="relative group">
-                            <span
-                                class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors text-xl">event_available</span>
-                            <input type="date" name="return_date" x-model="form.return_date" required
-                                class="w-full pl-12 pr-4 py-3.5 bg-slate-50/50 border-slate-100 rounded-2xl focus:bg-white focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 transition-all font-bold text-slate-700 shadow-inner">
-                        </div>
-                    </div>
-
-                    {{-- Status (Only for Edit Mode) --}}
-                    <div class="md:col-span-2 space-y-3" x-show="editMode" x-transition>
-                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Status
-                            Sewa</label>
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                            <template
-                                x-for="(label, val) in {'pending': 'Menunggu', 'approved': 'Disetujui', 'rejected': 'Ditolak', 'completed': 'Selesai'}"
-                                :key="val">
-                                <label class="cursor-pointer group">
-                                    <input type="radio" name="status" :value="val" x-model="form.status"
-                                        class="peer sr-only">
-                                    <div
-                                        class="py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest text-center border transition-all peer-checked:bg-indigo-600 peer-checked:border-indigo-600 peer-checked:text-white border-slate-100 text-slate-400 hover:bg-slate-50 group-active:scale-95 shadow-sm">
-                                        <span x-text="label"></span>
-                                    </div>
-                                </label>
-                            </template>
-                        </div>
-                    </div>
-
-                    {{-- Catatan --}}
-                    <div class="md:col-span-2 space-y-2">
-                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Catatan
-                            Tambahan</label>
-                        <textarea name="notes" x-model="form.notes" rows="2" placeholder="Opsional..."
-                            class="w-full px-6 py-4 bg-slate-50/50 border-slate-100 rounded-3xl focus:bg-white focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 transition-all font-bold text-slate-700 shadow-inner resize-none"></textarea>
-                    </div>
-                </div>
-
-                <div class="flex items-center justify-between mt-10 pt-8 border-t border-slate-50">
-                    <button type="button" @click="closeModal()"
-                        class="px-8 py-4 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-slate-600 transition-colors">Batal</button>
-
-                    <button type="submit"
-                        class="px-10 py-4.5 bg-indigo-600 text-white font-black text-[11px] uppercase tracking-[0.2em] rounded-2xl shadow-xl shadow-indigo-200 hover:bg-slate-900 transition-all active:scale-95 flex items-center gap-3">
-                        <span class="material-symbols-outlined text-xl" x-text="editMode ? 'save' : 'done_all'"></span>
-                        <span x-text="editMode ? 'Simpan Perubahan' : 'Selesaikan'"></span>
-                    </button>
-                </div>
-            </form>
         </div>
     </div>
 
@@ -451,44 +457,55 @@
             document.addEventListener('DOMContentLoaded', function () {
                 const returnDates = @json($returnDates);
 
-                flatpickr("#rental-sidebar-calendar", {
-                    inline: true,
-                    locale: {
-                        firstDayOfWeek: 1,
-                        weekdays: {
-                            shorthand: ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"],
-                            longhand: ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"]
+                if (typeof flatpickr !== 'undefined') {
+                    flatpickr("#rental-sidebar-calendar", {
+                        inline: true,
+                        locale: {
+                            firstDayOfWeek: 1,
+                            weekdays: {
+                                shorthand: ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"],
+                                longhand: ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"]
+                            },
+                            months: {
+                                shorthand: ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"],
+                                longhand: ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"]
+                            }
                         },
-                        months: {
-                            shorthand: ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"],
-                            longhand: ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"]
-                        }
-                    },
-                    defaultDate: new Date(),
-                    dateFormat: "Y-m-d",
-                    disableMobile: true,
-                    showMonths: 1,
-                    monthSelectorType: "static",
+                        defaultDate: new Date(),
+                        dateFormat: "Y-m-d",
+                        disableMobile: true,
+                        showMonths: 1,
+                        monthSelectorType: "static",
 
-                    onDayCreate: function (_, __, fp, dayElem) {
-                        const date = dayElem.dateObj;
-                        const day = date.getDay();
+                        onDayCreate: function (_, __, fp, dayElem) {
+                            const date = dayElem.dateObj;
+                            const day = date.getDay();
 
-                        if (day === 0 || day === 6) {
-                            dayElem.classList.add('holiday');
-                        }
+                            if (day === 0 || day === 6) {
+                                dayElem.classList.add('holiday');
+                            }
 
-                        const dateStr = fp.formatDate(date, "Y-m-d");
-                        if (returnDates.includes(dateStr)) {
-                            const dot = document.createElement("span");
-                            dot.className = "return-dot";
-                            dayElem.appendChild(dot);
+                            const dateStr = fp.formatDate(date, "Y-m-d");
+                            if (returnDates.includes(dateStr)) {
+                                const dot = document.createElement("span");
+                                dot.className = "return-dot";
+                                dayElem.appendChild(dot);
+                            }
                         }
-                    }
-                });
+                    });
+                } else {
+                    console.warn("Flatpickr library not loaded");
+                }
             });
 
             function rentalPage() {
+                // Prepare data from server safely
+                const pendingStatusId = @json($rentalStatuses->firstWhere('slug', 'pending')?->id ?? ($rentalStatuses->first()?->id ?? ''));
+                const rentalsData = @json($rentals);
+                const labsData = @json($labs);
+
+                console.log("Rental Page Initialized", { pendingStatusId, labsCount: labsData ? labsData.length : 0 });
+
                 return {
                     openModal: false,
                     editMode: false,
@@ -503,11 +520,11 @@
                         purpose: '',
                         rental_date: '',
                         return_date: '',
-                        status: 'pending',
+                        status_id: pendingStatusId,
                         notes: ''
                     },
-                    rentals: @json($rentals),
-                    labs: @json($labs),
+                    rentals: rentalsData,
+                    labs: labsData,
 
                     get allLabs() {
                         return this.labs || [];
@@ -521,7 +538,7 @@
                         }
 
                         if (this.selectedStatus !== 'all') {
-                            filtered = filtered.filter(r => r.status === this.selectedStatus);
+                            filtered = filtered.filter(r => r.status?.slug === this.selectedStatus);
                         }
 
                         if (this.searchTerm) {
@@ -547,27 +564,22 @@
                         }
                     },
 
-                    getStatusColor(status) {
+                    getStatusColor(statusSlug) {
                         const colors = {
                             'pending': 'bg-amber-100 text-amber-700',
                             'approved': 'bg-indigo-100 text-indigo-700',
                             'rejected': 'bg-red-100 text-red-700',
                             'completed': 'bg-green-100 text-green-700',
                         };
-                        return colors[status] || 'bg-gray-100 text-gray-700';
+                        return colors[statusSlug] || 'bg-gray-100 text-gray-700';
                     },
 
-                    getStatusLabel(status) {
-                        const labels = {
-                            'pending': 'Menunggu',
-                            'approved': 'Disetujui',
-                            'rejected': 'Ditolak',
-                            'completed': 'Selesai',
-                        };
-                        return labels[status] || status;
+                    getStatusLabel(statusSlug) {
+                        return statusSlug;
                     },
 
                     openCreateModal() {
+                        console.log("Opening Create Modal");
                         this.editMode = false;
                         this.form = {
                             id: '',
@@ -577,13 +589,14 @@
                             purpose: '',
                             rental_date: new Date().toISOString().split('T')[0],
                             return_date: '',
-                            status: 'pending',
+                            status_id: pendingStatusId,
                             notes: ''
                         };
                         this.openModal = true;
                     },
 
                     openEditModal(rental) {
+                        console.log("Opening Edit Modal", rental);
                         this.editMode = true;
 
                         // Format dates
@@ -593,6 +606,7 @@
                         this.form = {
                             ...rental,
                             lab_id: String(rental.lab_id),
+                            status_id: String(rental.status_id),
                             rental_date: rDate,
                             return_date: rtDate
                         };

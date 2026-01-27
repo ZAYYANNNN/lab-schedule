@@ -93,61 +93,6 @@
                     </div>
                 </div>
 
-                {{-- SECTION 2: JATUH TEMPO & KETERLAMBATAN --}}
-                <div class="bg-white rounded-[2rem] shadow-sm border border-slate-100 p-5 flex flex-col h-[300px]">
-                    <div class="flex items-center gap-3 mb-4 flex-shrink-0">
-                        <div class="w-8 h-8 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center">
-                            <span class="material-symbols-outlined text-base">warning</span>
-                        </div>
-                        <h2 class="font-black text-slate-800 uppercase text-xs tracking-[0.2em]">Jatuh Tempo &
-                            Keterlambatan</h2>
-                    </div>
-
-                    <div class="space-y-3 overflow-y-auto scrollbar-thin flex-1 pr-1">
-                        {{-- Loop Attention Items --}}
-                        @forelse($attentionItems as $item)
-                                            <div @click="filterDate = '{{ $item->return_date->format('Y-m-d') }}'; searchTerm = '{{ $item->nama_peminjam }}'"
-                                                class="flex items-start gap-3 p-3 rounded-2xl border cursor-pointer transition-colors group
-                                                                                                {{ $item->status === 'returned' && $item->getLateDuration() ? 'bg-orange-50 border-orange-100 hover:bg-orange-100' :
-                            ($item->isOverdue() ? 'bg-rose-50 border-rose-100 hover:bg-rose-100' : 'bg-amber-50 border-amber-100 hover:bg-amber-100') }}">
-
-                                                <div class="w-2 h-2 rounded-full mt-1.5 flex-shrink-0 group-hover:scale-125 transition-transform
-                                                                                                    {{ $item->status === 'returned' && $item->getLateDuration() ? 'bg-orange-500' :
-                            ($item->isOverdue() ? 'bg-rose-500' : 'bg-amber-500') }}">
-                                                </div>
-
-                                                <div class="w-full">
-                                                    <div class="flex justify-between items-start">
-                                                        <p class="text-[10px] font-black uppercase tracking-wider mb-0.5
-                                                                                                            {{ $item->status === 'returned' && $item->getLateDuration() ? 'text-orange-700' :
-                            ($item->isOverdue() ? 'text-rose-700' : 'text-amber-700') }}">
-                                                            @if($item->status === 'returned')
-                                                                Telat {{ $item->getLateDuration() }}
-                                                            @elseif($item->isOverdue())
-                                                                Terlambat
-                                                            @else
-                                                                Hari Ini
-                                                            @endif
-                                                        </p>
-                                                        <span class="text-[9px] font-bold opacity-70">
-                                                            {{ \Carbon\Carbon::parse($item->return_time)->format('H:i') }}
-                                                        </span>
-                                                    </div>
-                                                    <p class="text-xs font-bold text-slate-700 line-clamp-1 group-hover:text-slate-900">
-                                                        {{ $item->nama_peminjam }}
-                                                    </p>
-                                                    <p class="text-[10px] text-slate-500">{{ $item->asset->nama ?? 'Aset dihapus' }}</p>
-                                                </div>
-                                            </div>
-                        @empty
-                            <div class="h-full flex flex-col items-center justify-center text-center text-slate-400">
-                                <span class="material-symbols-outlined text-3xl mb-2 opacity-50">check_circle</span>
-                                <p class="text-[10px] font-bold">Tidak ada peringatan</p>
-                            </div>
-                        @endforelse
-                    </div>
-                </div>
-
                 {{-- SECTION 3: LAB LIST --}}
                 <div class="bg-white rounded-[2rem] shadow-sm border border-slate-100 p-5 flex flex-col h-[300px]">
                     <div class="flex items-center gap-3 mb-4 flex-shrink-0">
@@ -195,10 +140,9 @@
                                 <select x-model="filterStatus"
                                     class="w-full bg-slate-50 border-transparent rounded-2xl pl-4 pr-10 py-3.5 text-sm font-bold focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-600 appearance-none cursor-pointer">
                                     <option value="">Semua Status</option>
-                                    <option value="pending">Menunggu</option>
-                                    <option value="approved">Disetujui</option>
-                                    <option value="rejected">Ditolak</option>
-                                    <option value="returned">Kembali</option>
+                                    @foreach($borrowingStatuses as $status)
+                                        <option value="{{ $status->slug }}">{{ $status->name }}</option>
+                                    @endforeach
                                 </select>
                                 <span
                                     class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none">filter_list</span>
@@ -250,7 +194,7 @@
                                                         <p class="font-black text-slate-900 tracking-tight leading-none mb-1"
                                                             x-text="b.nama_peminjam"></p>
                                                         <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest"
-                                                            x-text="b.nim"></p>
+                                                            x-text="b.nomor_identitas"></p>
                                                     </div>
                                                 </div>
                                             </td>
@@ -287,7 +231,7 @@
                                             <td class="px-6 py-4">
                                                 <span
                                                     class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider border shadow-sm"
-                                                    :class="getStatusColor(b)" x-text="getStatusLabel(b.status)">
+                                                    :class="getStatusColor(b)" x-text="getStatusLabel(b.status?.slug)">
                                                 </span>
                                             </td>
                                             <td class="px-6 py-4 text-right">
@@ -376,7 +320,8 @@
                                                         <p class="font-bold text-slate-900 text-xs mb-0.5"
                                                             x-text="b.nama_peminjam">
                                                         </p>
-                                                        <p class="text-[10px] font-bold text-slate-400" x-text="b.nim">
+                                                        <p class="text-[10px] font-bold text-slate-400"
+                                                            x-text="b.nomor_identitas">
                                                         </p>
                                                     </div>
                                                 </div>
@@ -392,9 +337,9 @@
                                             <td class="px-6 py-4">
                                                 <span
                                                     class="px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-wider"
-                                                    :class="b.status === 'returned' ? 'bg-orange-100 text-orange-700' : 'bg-rose-100 text-rose-700'">
+                                                    :class="b.status?.slug === 'returned' ? 'bg-orange-100 text-orange-700' : 'bg-rose-100 text-rose-700'">
                                                     <span
-                                                        x-text="b.status === 'returned' ? 'Dikembalikan Terlambat' : 'Belum Kembali'"></span>
+                                                        x-text="b.status?.slug === 'returned' ? 'Dikembalikan Terlambat' : 'Belum Kembali'"></span>
                                                 </span>
                                             </td>
                                             <td class="px-6 py-4">
@@ -446,9 +391,9 @@
                                     class="w-full px-4 py-3 bg-slate-50 border-slate-100 rounded-xl text-sm font-bold focus:bg-white focus:ring-2 focus:ring-blue-500 transition-all">
                             </div>
                             <div class="space-y-1">
-                                <label
-                                    class="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-1">NIM</label>
-                                <input type="text" name="nim" x-model="form.nim" required
+                                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-1">Nomor
+                                    Identitas</label>
+                                <input type="text" name="nomor_identitas" x-model="form.nomor_identitas" required
                                     class="w-full px-4 py-3 bg-slate-50 border-slate-100 rounded-xl text-sm font-bold focus:bg-white focus:ring-2 focus:ring-blue-500 transition-all">
                             </div>
                             <div class="space-y-1">
@@ -505,19 +450,17 @@
                             <div class="md:col-span-2 space-y-2" x-show="editMode">
                                 <label
                                     class="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-1">Status</label>
-                                <div class="flex gap-2">
-                                    <template
-                                        x-for="(label, val) in {'pending': 'Menunggu', 'approved': 'Disetujui', 'rejected': 'Ditolak', 'returned': 'Kembali'}"
-                                        :key="val">
+                                <div class="flex gap-2 flex-wrap">
+                                    @foreach($borrowingStatuses as $status)
                                         <label class="cursor-pointer">
-                                            <input type="radio" name="status" :value="val" x-model="form.status"
-                                                class="peer sr-only">
+                                            <input type="radio" name="status_id" value="{{ $status->id }}"
+                                                x-model="form.status_id" class="peer sr-only">
                                             <div
                                                 class="px-4 py-2 rounded-lg text-[10px] font-bold uppercase border transition-all peer-checked:bg-blue-600 peer-checked:text-white border-slate-100 text-slate-400 mb-1 hover:bg-slate-50">
-                                                <span x-text="label"></span>
+                                                <span>{{ $status->name }}</span>
                                             </div>
                                         </label>
-                                    </template>
+                                    @endforeach
                                 </div>
                             </div>
                             <div class="md:col-span-2 space-y-1">
@@ -555,14 +498,14 @@
                         form: {
                             id: '',
                             nama_peminjam: '',
-                            nim: '',
+                            nomor_identitas: '',
                             lab_id: '',
                             asset_id: '',
                             borrow_date: '',
                             borrow_time: '08:00',
                             return_date: '',
                             return_time: '17:00',
-                            status: 'pending',
+                            status_id: '{{ $borrowingStatuses->firstWhere('slug', 'pending')?->id }}', // Default pending ID
                             notes: ''
                         },
                         borrowings: @json($borrowings ?? []),
@@ -582,7 +525,7 @@
                                 filtered = filtered.filter(b => String(b.lab_id) === String(this.selectedLabId));
                             }
                             if (this.filterStatus) {
-                                filtered = filtered.filter(b => b.status === this.filterStatus);
+                                filtered = filtered.filter(b => b.status?.slug === this.filterStatus);
                             }
                             if (this.filterDate) {
                                 filtered = filtered.filter(b => b.return_date && b.return_date.split('T')[0] === this.filterDate);
@@ -591,7 +534,7 @@
                                 const term = this.searchTerm.toLowerCase();
                                 filtered = filtered.filter(b =>
                                     (b.nama_peminjam && b.nama_peminjam.toLowerCase().includes(term)) ||
-                                    (b.nim && b.nim.toLowerCase().includes(term)) ||
+                                    (b.nomor_identitas && b.nomor_identitas.toLowerCase().includes(term)) ||
                                     (b.asset && b.asset.nama && b.asset.nama.toLowerCase().includes(term)) ||
                                     (b.lab && b.lab.name && b.lab.name.toLowerCase().includes(term))
                                 );
@@ -697,12 +640,12 @@
                         },
 
                         getStatusColor(item) {
-                            if (item.status !== 'returned' && item.status !== 'rejected' && this.isOverdue(item)) {
+                            const status = item.status?.slug || item.status;
+                            if (status !== 'returned' && status !== 'rejected' && this.isOverdue(item)) {
                                 return 'bg-rose-100 text-rose-700';
                             }
-
                             const colors = { 'pending': 'bg-amber-100 text-amber-700', 'approved': 'bg-blue-100 text-blue-700', 'rejected': 'bg-red-100 text-red-700', 'returned': 'bg-green-100 text-green-700' };
-                            return colors[item.status] || 'bg-gray-100 text-gray-700';
+                            return colors[status] || 'bg-gray-100 text-gray-700';
                         },
 
                         getStatusLabel(status) {
@@ -711,7 +654,8 @@
                         },
 
                         isOverdue(item) {
-                            if (item.status === 'returned' || item.status === 'rejected') return false;
+                            const status = item.status?.slug || item.status;
+                            if (status === 'returned' || status === 'rejected' || status === 'pending') return false; // Exclude pending too
                             if (!item.return_date) return false;
 
                             const returnDateStr = item.return_date.split('T')[0];
@@ -772,14 +716,14 @@
                             this.form = {
                                 id: '',
                                 nama_peminjam: '',
-                                nim: '',
+                                nomor_identitas: '',
                                 lab_id: '',
                                 asset_id: '',
                                 borrow_date: today,
                                 borrow_time: '08:00',
                                 return_date: '',
                                 return_time: '17:00',
-                                status: 'pending',
+                                status_id: '{{ $borrowingStatuses->firstWhere('slug', 'pending')?->id }}',
                                 notes: ''
                             };
                             this.availableAssets = [];
@@ -797,6 +741,7 @@
                                 ...borrowing,
                                 lab_id: labId,
                                 asset_id: String(borrowing.asset_id),
+                                status_id: String(borrowing.status_id), // Use status_id
                                 borrow_date: borrowing.borrow_date ? borrowing.borrow_date.split('T')[0] : '',
                                 borrow_time: borrowing.borrow_time ? borrowing.borrow_time.substring(0, 5) : '08:00',
                                 return_date: borrowing.return_date ? borrowing.return_date.split('T')[0] : '',

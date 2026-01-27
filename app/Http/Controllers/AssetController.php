@@ -18,14 +18,21 @@ class AssetController extends Controller
         // Fetch accessible labs
         $labQuery = \App\Models\Lab::with('prodi');
         if ($user->role === 'admin') {
-            $labQuery->where('prodi_id', $user->prodi_id);
+            $managedLab = Lab::where('admin_id', $user->id)->first();
+            if ($managedLab) {
+                $labQuery->where('id', $managedLab->id);
+            } else {
+                $labQuery->where('prodi_id', $user->prodi_id);
+            }
         }
         $labs = $labQuery->orderBy('name')->get();
 
         // Fetch all assets for these labs, with active borrowing counts
         $assetQuery = AssetLab::with(['lab.prodi'])->withCount([
             'borrowings as borrowed_count' => function ($q) {
-                $q->whereIn('status', ['pending', 'approved']);
+                $q->whereHas('status', function ($q) {
+                    $q->whereIn('slug', ['pending', 'approved']);
+                });
             }
         ]);
         if ($user->role === 'admin') {
@@ -36,7 +43,9 @@ class AssetController extends Controller
         $assets = $assetQuery->get();
 
         // Fetch return dates for markers
-        $returnDates = \App\Models\Borrowing::whereIn('status', ['pending', 'approved'])
+        $returnDates = \App\Models\Borrowing::whereHas('status', function ($q) {
+            $q->whereIn('slug', ['pending', 'approved']);
+        })
             ->whereIn('lab_id', $labs->pluck('id'))
             ->selectRaw('DISTINCT return_date')
             ->pluck('return_date')
@@ -53,7 +62,12 @@ class AssetController extends Controller
     {
         $labQuery = Lab::query();
         if (auth()->user()->role === 'admin') {
-            $labQuery->where('prodi_id', auth()->user()->prodi_id);
+            $managedLab = Lab::where('admin_id', auth()->id())->first();
+            if ($managedLab) {
+                $labQuery->where('id', $managedLab->id);
+            } else {
+                $labQuery->where('prodi_id', auth()->user()->prodi_id);
+            }
         }
         $labs = $labQuery->get();
         return view('assets.create', compact('labs'));
@@ -99,7 +113,12 @@ class AssetController extends Controller
 
         $labQuery = Lab::query();
         if (auth()->user()->role === 'admin') {
-            $labQuery->where('prodi_id', auth()->user()->prodi_id);
+            $managedLab = Lab::where('admin_id', auth()->id())->first();
+            if ($managedLab) {
+                $labQuery->where('id', $managedLab->id);
+            } else {
+                $labQuery->where('prodi_id', auth()->user()->prodi_id);
+            }
         }
         $labs = $labQuery->get();
         return view('assets.edit', compact('asset', 'labs'));

@@ -16,13 +16,14 @@ class Lab extends Model
     protected $fillable = [
         'name',
         'kode_lab',
-        'type',
+        'type_id',
         'lokasi',
         'prodi',
         'prodi_id',
         'kapasitas',
-        'pj',
-        'status',
+        'kapasitas',
+        'admin_id',
+        'status_id',
         'foto'
     ];
 
@@ -39,6 +40,16 @@ class Lab extends Model
         return $this->belongsTo(Prodi::class);
     }
 
+    public function type()
+    {
+        return $this->belongsTo(LabType::class, 'type_id');
+    }
+
+    public function status()
+    {
+        return $this->belongsTo(LabStatus::class, 'status_id');
+    }
+
     public function assets()
     {
         return $this->hasMany(AssetLab::class);
@@ -52,5 +63,10 @@ class Lab extends Model
     public function borrowings()
     {
         return $this->hasMany(Borrowing::class);
+    }
+
+    public function admin()
+    {
+        return $this->belongsTo(User::class, 'admin_id');
     }
 }
