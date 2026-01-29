@@ -1,62 +1,5 @@
 <x-app-layout>
-    <div class="w-full px-4 py-6 overflow-x-hidden" x-data="{ 
-        showModal: {{ $errors->any() ? 'true' : 'false' }}, 
-        showDetail: false,
-        selectedSchedule: null,
-        editMode: {{ old('_method') === 'PUT' ? 'true' : 'false' }},
-        formAction: '{{ old('_method') === 'PUT' ? url('/schedules/' . old('id')) : route('schedules.store') }}',
-        
-        selectedLabs: [{!! implode(',', array_map(fn($id) => "'$id'", $selectedLabIds)) !!}],
-
-        formData: {
-            id: '{{ old('id') }}',
-            lab_id: '{{ old('lab_id') }}',
-            activity: '{{ old('activity') }}',
-            date: '{{ old('date', $selectedDate) }}',
-            start_time: '{{ old('start_time') }}',
-            end_time: '{{ old('end_time') }}'
-        },
-        openCreateModal() {
-            this.editMode = false;
-            this.formAction = '{{ route('schedules.store') }}';
-            this.formData = { id: '', lab_id: '', activity: '', date: '{{ $selectedDate }}', start_time: '', end_time: '' };
-            this.showModal = true;
-        },
-        openDetailModal(schedule) {
-            this.selectedSchedule = schedule;
-            this.showDetail = true;
-        },
-        openEditModalFromDetail() {
-            if (!this.selectedSchedule) return;
-            this.openEditModal(this.selectedSchedule);
-            this.showDetail = false;
-        },
-        prodiThemes: {
-            'Teknik Informatika': { bg: 'bg-blue-50', bg100: 'bg-blue-100', text700: 'text-blue-700', icon: 'text-blue-600' },
-            'Teknik Sipil': { bg: 'bg-green-50', bg100: 'bg-green-100', text700: 'text-green-700', icon: 'text-green-600' },
-            'Teknik Mesin': { bg: 'bg-red-50', bg100: 'bg-red-100', text700: 'text-red-700', icon: 'text-red-600' },
-            'Teknik Elektro': { bg: 'bg-amber-50', bg100: 'bg-amber-100', text700: 'text-amber-700', icon: 'text-amber-600' },
-            'Hukum': { bg: 'bg-purple-50', bg100: 'bg-purple-100', text700: 'text-purple-700', icon: 'text-purple-600' },
-            'Default': { bg: 'bg-slate-50', bg100: 'bg-slate-100', text700: 'text-slate-700', icon: 'text-slate-600' }
-        },
-        getTheme(prodi) {
-            const name = (typeof prodi === 'object' && prodi !== null) ? prodi.name : prodi;
-            return this.prodiThemes[name] || this.prodiThemes['Default'];
-        },
-        openEditModal(schedule) {
-            this.editMode = true;
-            this.formAction = '/schedules/' + schedule.id;
-            this.formData = {
-                id: schedule.id,
-                lab_id: schedule.lab_id,
-                activity: schedule.activity,
-                date: schedule.date,
-                start_time: schedule.start_time.substring(0, 5),
-                end_time: schedule.end_time.substring(0, 5)
-            };
-            this.showModal = true;
-        }
-    }">
+    <div class="w-full px-4 py-6 overflow-x-hidden" x-data="schedulePage()">
 
         @php
             function getProdiTheme($prodi)
@@ -117,6 +60,57 @@
                         'textBold' => 'text-purple-700',
                         'icon' => 'text-purple-600',
                         'tag' => 'bg-purple-100 text-purple-700'
+                    ],
+                    default => [
+                        'bg' => 'bg-slate-50',
+                        'bgHover' => 'hover:bg-slate-100',
+                        'border' => 'border-slate-500',
+                        'borderLight' => 'border-slate-200',
+                        'text' => 'text-slate-900',
+                        'textMuted' => 'text-slate-700/70',
+                        'textBold' => 'text-slate-700',
+                        'icon' => 'text-slate-600',
+                        'tag' => 'bg-slate-100 text-slate-700'
+                    ]
+                };
+            }
+
+            function getActivityTypeTheme($activityType)
+            {
+                $name = is_object($activityType) ? strtolower($activityType->name) : strtolower($activityType ?? '');
+                return match (true) {
+                    str_contains($name, 'kalibrasi') => [
+                        'bg' => 'bg-purple-50',
+                        'bgHover' => 'hover:bg-purple-100',
+                        'border' => 'border-purple-500',
+                        'borderLight' => 'border-purple-200',
+                        'text' => 'text-purple-900',
+                        'textMuted' => 'text-purple-700/70',
+                        'textBold' => 'text-purple-700',
+                        'icon' => 'text-purple-600',
+                        'tag' => 'bg-purple-100 text-purple-700'
+                    ],
+                    str_contains($name, 'praktikum') => [
+                        'bg' => 'bg-green-50',
+                        'bgHover' => 'hover:bg-green-100',
+                        'border' => 'border-green-500',
+                        'borderLight' => 'border-green-200',
+                        'text' => 'text-green-900',
+                        'textMuted' => 'text-green-700/70',
+                        'textBold' => 'text-green-700',
+                        'icon' => 'text-green-600',
+                        'tag' => 'bg-green-100 text-green-700'
+                    ],
+                    str_contains($name, 'pengujian') => [
+                        'bg' => 'bg-yellow-50',
+                        'bgHover' => 'hover:bg-yellow-100',
+                        'border' => 'border-yellow-500',
+                        'borderLight' => 'border-yellow-200',
+                        'text' => 'text-yellow-900',
+                        'textMuted' => 'text-yellow-700/70',
+                        'textBold' => 'text-yellow-700',
+                        'icon' => 'text-yellow-600',
+                        'tag' => 'bg-yellow-100 text-yellow-700'
                     ],
                     default => [
                         'bg' => 'bg-slate-50',
@@ -219,19 +213,52 @@
                             Filter Lab
                         </h3>
 
+                        {{-- Search Filter Lab --}}
+                        <div class="mb-3 relative flex gap-2">
+                            <div class="relative flex-1">
+                                <span
+                                    class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">search</span>
+                                <input type="text" x-model="labSearch" placeholder="Cari Lab..."
+                                    class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none">
+                            </div>
+                            <div class="relative w-28">
+                                <select x-model="labTypeFilter"
+                                    class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none appearance-none cursor-pointer">
+                                    <option value="">Semua</option>
+                                    @foreach(\App\Models\LabType::all() as $type)
+                                        <option value="{{ $type->id }}">{{ $type->name }}</option>
+                                    @endforeach
+                                </select>
+                                <span
+                                    class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none">expand_more</span>
+                            </div>
+                        </div>
+
                         <div class="space-y-4 max-h-[400px] overflow-y-auto pr-2 scrollbar-thin">
                             <div class="space-y-2">
-                                @foreach($allLabs as $lab)
+                                <template x-for="lab in filteredLabs" :key="lab.id">
                                     <label
                                         class="flex items-center cursor-pointer group p-2.5 hover:bg-blue-50/50 rounded-2xl border border-transparent hover:border-blue-100 transition-all duration-300">
-                                        <input type="checkbox" name="lab_ids[]" value="{{ $lab->id }}" x-model="selectedLabs"
-                                            @change="document.getElementById('filterForm').submit()"
+                                        <input type="checkbox" name="lab_ids[]" :value="lab.id" x-model="selectedLabs"
                                             class="w-5 h-5 rounded-lg border-slate-200 text-blue-600 focus:ring-blue-500 shadow-sm transition-all">
                                         <span
-                                            class="ml-3 text-sm font-bold text-slate-700 group-hover:text-blue-600 transition">{{ $lab->name }}</span>
+                                            class="ml-3 text-sm font-bold text-slate-700 group-hover:text-blue-600 transition"
+                                            x-text="lab.name"></span>
                                     </label>
-                                @endforeach
+                                </template>
+                                <template x-if="filteredLabs.length === 0">
+                                    <p class="text-xs text-center text-gray-400 py-2">Lab tidak ditemukan</p>
+                                </template>
                             </div>
+                        </div>
+
+                        {{-- Apply Filter Button --}}
+                        <div class="mt-4 pt-4 border-t border-slate-100">
+                            <button type="submit"
+                                class="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-blue-600 text-white hover:bg-blue-700 transition-all font-bold text-xs uppercase tracking-wider shadow-lg shadow-blue-200">
+                                <span class="material-symbols-outlined text-[18px]">filter_alt</span>
+                                Terapkan Filter
+                            </button>
                         </div>
 
                         @if(!empty($selectedProdiIds) || !empty($selectedLabIds))
@@ -255,7 +282,7 @@
                         @php
                             $labCount = count($labs);
                             $gridCols = "100px repeat(" . max(1, $labCount) . ", minmax(280px, 1fr))";
-                            $totalSlots = 44; 
+                            $totalSlots = 64; // Extended to 11 PM (16 hours * 4 slots per hour)
                         @endphp
 
                         <div class="grid relative bg-white" style="grid-template-columns: {{ $gridCols }}; 
@@ -263,7 +290,7 @@
 
                             {{-- 1. HEADER WAKTU (POJOK) --}}
                             <div
-                                class="sticky top-0 left-0 z-[50] bg-slate-50/80 border-r border-b border-white-800 flex items-center justify-center text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] shadow-lg">
+                                class="sticky top-0 left-0 z-[50] bg-slate-50/80 border-r border-b border-white-300 flex items-center justify-center text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] shadow-lg">
                                 Waktu
                             </div>
 
@@ -287,7 +314,7 @@
                             @else
                                 <div
                                     class="sticky top-0 z-[40] bg-slate-50/50 backdrop-blur-sm border-b border-slate-100 flex items-center justify-center text-slate-400 p-12 text-center col-start-2">
-                                    <div class="flex flex-col items-center">
+                                    <div class="flex flex-col items-center mt-20 pt-20">
                                         <div
                                             class="w-20 h-20 rounded-3xl bg-white shadow-xl flex items-center justify-center text-slate-200 mb-6">
                                             <span class="material-symbols-outlined text-5xl">inventory_2</span>
@@ -302,8 +329,8 @@
                                 </div>
                             @endif
 
-                            {{-- 3. LABEL JAM & GRID LINES --}}
-                            @for($i = 0; $i < 11; $i++)
+                            {{-- 3. LABEL JAM & GRID LINES (07:00 - 23:00) --}}
+                            @for($i = 0; $i < 16; $i++)
                                 @php $currentHour = 7 + $i; @endphp
                                 <div class="sticky left-0 z-[30] bg-slate-50/80 backdrop-blur-sm border-r border-slate-100 flex items-start justify-center pt-2 text-[11px] font-black text-slate-400 shadow-sm"
                                     style="grid-row: {{ ($i * 4) + 2 }} / span 4;">
@@ -311,9 +338,9 @@
                                 </div>
 
                                 {{-- Horizontal Lines --}}
-                                <div class="col-start-2 col-end-[-1] border-b border-slate-100"
+                                <div class="col-start-2 col-end-[-1] border-b border-slate-300"
                                     style="grid-row: {{ ($i * 4) + 2 }};"></div>
-                                <div class="col-start-2 col-end-[-1] border-b border-slate-50 border-dashed"
+                                <div class="col-start-2 col-end-[-1] border-b border-slate-300 border-dashed"
                                     style="grid-row: {{ ($i * 4) + 4 }};"></div>
                             @endfor
 
@@ -328,22 +355,28 @@
                                         $start = \Carbon\Carbon::parse($schedule->start_time);
                                         $end = \Carbon\Carbon::parse($schedule->end_time);
                                         $startSlot = (($start->hour - 7) * 4) + floor($start->minute / 15);
-                                        $endSlot = (($end->hour - 7) * 4) + floor($end->minute / 15);
+                                        // Use ceil for end time so card extends properly to cover full duration
+                                        $endSlot = (($end->hour - 7) * 4) + ceil($end->minute / 15);
+                                        // If end minute is 0, don't add extra slot
+                                        if ($end->minute == 0) {
+                                            $endSlot = (($end->hour - 7) * 4);
+                                        }
                                         $startRow = $startSlot + 2;
                                         $span = max(1, $endSlot - $startSlot);
                                         $colIndex = $labIndex + 2;
 
                                         $lab = $labs[$labIndex];
                                         $theme = getProdiTheme($lab->prodi);
+                                        $activityTheme = getActivityTypeTheme($schedule->activityType);
                                     @endphp
 
                                     <div class="z-10 px-2 py-1"
                                         style="grid-column: {{ $colIndex }}; grid-row: {{ $startRow }} / span {{ $span }};">
                                         <div @click="openDetailModal({{ $schedule->toJson() }})"
-                                            class="group h-full w-full rounded-2xl border-l-[6px] {{ $theme['border'] }} {{ $theme['bg'] }} p-4 flex flex-col justify-between shadow-xl shadow-slate-200/20 ring-1 ring-black/5 hover:scale-[1.02] transform transition-all duration-300 cursor-pointer overflow-hidden relative">
+                                            class="group h-full w-full rounded-2xl border-l-[6px] {{ $activityTheme['border'] }} {{ $theme['bg'] }} p-4 flex flex-col justify-between shadow-xl shadow-slate-200/20 ring-1 ring-black/5 hover:scale-[1.02] transform transition-all duration-300 cursor-pointer overflow-hidden relative">
                                             {{-- Decorative Glow inside item --}}
                                             <div
-                                                class="absolute -right-4 -top-4 w-12 h-12 rounded-full opacity-10 blur-xl {{ $theme['icon'] }}">
+                                                class="absolute -right-4 -top-4 w-12 h-12 rounded-full opacity-10 blur-xl {{ $activityTheme['icon'] }}">
                                             </div>
 
                                             <div class="relative z-10">
@@ -352,10 +385,19 @@
                                                     {{ $schedule->activity }}
                                                 </h4>
                                                 <div
-                                                    class="flex items-center text-[10px] font-bold {{ $theme['textMuted'] }} opacity-80 mb-3 uppercase tracking-widest leading-none">
+                                                    class="flex items-center text-[10px] font-bold {{ $theme['textMuted'] }} opacity-80 mb-1 uppercase tracking-widest leading-none">
                                                     <span class="material-symbols-outlined text-[14px] mr-1.5">school</span>
                                                     {{ $schedule->creator->name ?? 'Dosen Pengampu' }}
                                                 </div>
+                                                {{-- Activity Type Badge --}}
+                                                @if($schedule->activityType)
+                                                    <div
+                                                        class="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 mt-24 border border-black/10 {{ $activityTheme['tag'] }}">
+                                                        <span class="material-symbols-outlined text-[10px]">category</span>
+                                                        <span
+                                                            class="text-[12px] font-bold uppercase tracking-wider">{{ $schedule->activityType->name }}</span>
+                                                    </div>
+                                                @endif
                                             </div>
                                             <div
                                                 class="flex items-center justify-between border-t {{ $theme['borderLight'] }} pt-3 mt-auto relative z-10">
@@ -367,7 +409,7 @@
                                                 <div
                                                     class="w-6 h-6 rounded-lg bg-white/50 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                                     <span
-                                                        class="material-symbols-outlined text-sm {{ $theme['icon'] }}">visibility</span>
+                                                        class="material-symbols-outlined text-sm {{ $activityTheme['icon'] }}">visibility</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -378,7 +420,7 @@
                             {{-- Vertical Grid Lines --}}
                             @if($labCount > 0)
                                 @foreach($labs as $index => $lab)
-                                    <div class="pointer-events-none border-r border-slate-100/80"
+                                    <div class="pointer-events-none border-r border-slate-300"
                                         style="grid-column: {{ $index + 2 }}; grid-row: 2 / span {{ $totalSlots + 1 }};">
                                     </div>
                                 @endforeach
@@ -434,6 +476,13 @@
                                     <p class="text-xs font-bold text-slate-400"
                                         x-text="'Oleh: ' + (selectedSchedule.creator?.name || 'Sistem')"></p>
                                     <span class="w-1 h-1 rounded-full bg-slate-200"></span>
+                                    <template x-if="selectedSchedule.activity_type">
+                                        <span
+                                            class="inline-block px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-[0.15em] bg-purple-100 text-purple-700 border border-white"
+                                            x-text="selectedSchedule.activity_type.name">
+                                        </span>
+                                    </template>
+
                                     <template x-if="selectedSchedule.lab?.prodi">
                                         <span
                                             :class="`inline-block px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-[0.15em] ${getTheme(selectedSchedule.lab?.prodi).bg100} ${getTheme(selectedSchedule.lab?.prodi).text700} border border-white`"
@@ -584,6 +633,29 @@
                                         {{ $message }}
                                     </p> @enderror
                                 </div>
+
+                                {{-- ACTIVITY TYPE --}}
+                                <div>
+                                    <label
+                                        class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">Jenis
+                                        Kegiatan</label>
+                                    <div class="relative group">
+                                        <select name="activity_type_id" x-model="formData.activity_type_id"
+                                            class="w-full bg-slate-50 border-none rounded-2xl py-4 px-4 text-slate-700 font-bold focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all appearance-none cursor-pointer"
+                                            required>
+                                            <option value="">-- Pilih Jenis Kegiatan --</option>
+                                            @foreach(\App\Models\ActivityType::all() as $type)
+                                                <option value="{{ $type->id }}">{{ $type->name }}</option>
+                                            @endforeach
+                                        </select>
+                                        <span
+                                            class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none">expand_more</span>
+                                    </div>
+                                    @error('activity_type_id') <p
+                                        class="text-rose-500 text-[10px] mt-2 font-bold ml-1 tracking-tight">
+                                        {{ $message }}
+                                    </p> @enderror
+                                </div>
                             </div>
 
                             <div>
@@ -721,5 +793,84 @@
                 display: none !important;
             }
         </style>
+        <script>
+            function schedulePage() {
+                return {
+                    showModal: {{ $errors->any() ? 'true' : 'false' }},
+                    showDetail: false,
+                    selectedSchedule: null,
+                    editMode: {{ old('_method') === 'PUT' ? 'true' : 'false' }},
+                    formAction: '{{ old('_method') === 'PUT' ? url('/schedules/' . old('id')) : route('schedules.store') }}',
+
+                    selectedLabs: [{!! implode(',', array_map(fn($id) => "'$id'", $selectedLabIds)) !!}],
+
+                    // Lab Search Data
+                    labSearch: '',
+                    labTypeFilter: '',
+                    allLabs: @json($allLabs),
+                    get filteredLabs() {
+                        let labs = this.allLabs;
+                        if (this.labSearch !== '') {
+                            labs = labs.filter(lab => lab.name.toLowerCase().includes(this.labSearch.toLowerCase()));
+                        }
+                        if (this.labTypeFilter !== '') {
+                            labs = labs.filter(lab => String(lab.type_id) === String(this.labTypeFilter));
+                        }
+                        return labs;
+                    },
+
+                    formData: {
+                        id: '{{ old('id') }}',
+                        lab_id: '{{ old('lab_id') }}',
+                        activity: '{{ old('activity') }}',
+                        activity_type_id: '{{ old('activity_type_id') }}',
+                        date: '{{ old('date', $selectedDate) }}',
+                        start_time: '{{ old('start_time') }}',
+                        end_time: '{{ old('end_time') }}'
+                    },
+                    openCreateModal() {
+                        this.editMode = false;
+                        this.formAction = '{{ route('schedules.store') }}';
+                        this.formData = { id: '', lab_id: '', activity: '', activity_type_id: '', date: '{{ $selectedDate }}', start_time: '', end_time: '' };
+                        this.showModal = true;
+                    },
+                    openDetailModal(schedule) {
+                        this.selectedSchedule = schedule;
+                        this.showDetail = true;
+                    },
+                    openEditModalFromDetail() {
+                        if (!this.selectedSchedule) return;
+                        this.openEditModal(this.selectedSchedule);
+                        this.showDetail = false;
+                    },
+                    prodiThemes: {
+                        'Teknik Informatika': { bg: 'bg-blue-50', bg100: 'bg-blue-100', text700: 'text-blue-700', icon: 'text-blue-600' },
+                        'Teknik Sipil': { bg: 'bg-green-50', bg100: 'bg-green-100', text700: 'text-green-700', icon: 'text-green-600' },
+                        'Teknik Mesin': { bg: 'bg-red-50', bg100: 'bg-red-100', text700: 'text-red-700', icon: 'text-red-600' },
+                        'Teknik Elektro': { bg: 'bg-amber-50', bg100: 'bg-amber-100', text700: 'text-amber-700', icon: 'text-amber-600' },
+                        'Hukum': { bg: 'bg-purple-50', bg100: 'bg-purple-100', text700: 'text-purple-700', icon: 'text-purple-600' },
+                        'Default': { bg: 'bg-slate-50', bg100: 'bg-slate-100', text700: 'text-slate-700', icon: 'text-slate-600' }
+                    },
+                    getTheme(prodi) {
+                        const name = (typeof prodi === 'object' && prodi !== null) ? prodi.name : prodi;
+                        return this.prodiThemes[name] || this.prodiThemes['Default'];
+                    },
+                    openEditModal(schedule) {
+                        this.editMode = true;
+                        this.formAction = '/schedules/' + schedule.id;
+                        this.formData = {
+                            id: schedule.id,
+                            lab_id: schedule.lab_id,
+                            activity: schedule.activity,
+                            activity_type_id: schedule.activity_type_id,
+                            date: schedule.date,
+                            start_time: schedule.start_time.substring(0, 5),
+                            end_time: schedule.end_time.substring(0, 5)
+                        };
+                        this.showModal = true;
+                    }
+                };
+            }
+        </script>
     @endpush
 </x-app-layout>

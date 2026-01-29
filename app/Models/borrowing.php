@@ -58,8 +58,8 @@ class Borrowing extends Model
      */
     public function isOverdue()
     {
-        // Don't mark as overdue if status is pending, returned, or rejected
-        if ($this->status && in_array($this->status->slug, ['pending', 'returned', 'rejected'])) {
+        // Don't mark as overdue if status is returned or rejected
+        if ($this->status && in_array($this->status->slug, ['returned', 'rejected'])) {
             return false;
         }
 

@@ -139,12 +139,6 @@
                                     </div>
                                     <div class="font-black text-sm tracking-tighter truncate" x-text="lab.name"></div>
                                 </div>
-                                @if(in_array(auth()->user()->role, ['admin', 'superadmin']))
-                                    <button @click.prevent.stop="openCreateModal(lab.id)"
-                                        class="w-8 h-8 rounded-lg bg-white/20 opacity-0 group-hover:opacity-100 transition-all text-current flex items-center justify-center flex-shrink-0 hover:scale-110">
-                                        <span class="material-symbols-outlined text-[18px]">add</span>
-                                    </button>
-                                @endif
                             </div>
                         </template>
 
@@ -197,6 +191,15 @@
                             </div>
                         </div>
                         <!-- Button removed as per request -->
+                         {{-- Create Button (Moved here) --}}
+                @if(in_array(auth()->user()->role, ['admin', 'superadmin']))
+                    <button @click="openCreateModal(selectedLabId)"
+                        class="bg-blue-600 text-white-600 px-6 py-4 rounded-[1.5rem] font-white text-[11px] uppercase tracking-[0.2em] flex items-center gap-3 shadow-2xl shadow-blue-900/20 hover:text-white transition-all active:scale-95 group/btn h-full whitespace-nowrap">
+                        <span
+                            class="material-symbols-outlined text-xl group-hover/btn:rotate-90 transition-transform">add</span>
+                        Tambah Aset
+                    </button>
+                @endif
                     </div>
                 </template>
 

@@ -7,8 +7,8 @@ use Illuminate\Support\Str;
 
 class Schedules extends Model
 {
-    public $incrementing = false;   
-    protected $keyType = 'string'; 
+    public $incrementing = false;
+    protected $keyType = 'string';
 
     protected $fillable = [
         'lab_id',
@@ -17,6 +17,7 @@ class Schedules extends Model
         'start_time',
         'end_time',
         'activity',
+        'activity_type_id',
     ];
 
     protected static function boot()
@@ -28,6 +29,11 @@ class Schedules extends Model
                 $model->id = Str::uuid()->toString();
             }
         });
+    }
+
+    public function activityType()
+    {
+        return $this->belongsTo(ActivityType::class);
     }
 
     public function lab()

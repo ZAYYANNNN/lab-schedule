@@ -18,55 +18,58 @@ class LabRentalController extends Controller
         }
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $this->checkAccess();
         $user = auth()->user();
+        $q = $request->search;
 
-        $rentalsQuery = LabRental::with(['lab', 'user', 'status'])->latest();
+        // Get Calibration Activity Type ID
+        $calibrationType = \App\Models\ActivityType::where('name', 'Kalibrasi')->first();
 
-        if ($user->role !== 'superadmin') {
-            $rentalsQuery->whereHas('lab', function ($q) use ($user) {
-                if ($user->role === 'admin') {
-                    $q->where('admin_id', $user->id);
-                } elseif ($user->prodi_id) {
-                    $q->where('prodi_id', $user->prodi_id);
-                }
-            });
+        // If activity type doesn't exist yet, we can't show anything (should be seeded)
+        if (!$calibrationType) {
+            $schedules = [];
+        } else {
+            $schedules = \App\Models\Schedules::query()
+                ->with(['lab', 'creator', 'activityType'])
+                ->where('activity_type_id', $calibrationType->id)
+                ->when($q, function ($query) use ($q) {
+                    $query->whereHas('lab', function ($subQuery) use ($q) {
+                        $subQuery->where('name', 'like', "%{$q}%");
+                    });
+                })
+                ->when($user->role !== 'superadmin', function ($query) use ($user) {
+                    if ($user->role === 'admin') {
+                        $query->whereHas('lab', function ($q) use ($user) {
+                            $q->where('admin_id', $user->id);
+                        });
+                    } elseif ($user->prodi_id) {
+                        $query->whereHas('lab', function ($q) use ($user) {
+                            $q->where('prodi_id', $user->prodi_id);
+                        });
+                    }
+                })
+                ->get()
+                ->map(function ($schedule) {
+                    return [
+                        'id' => $schedule->id,
+                        'title' => $schedule->activity . ' (' . ($schedule->lab->name ?? 'Unknown Lab') . ')',
+                        'start' => $schedule->date . 'T' . $schedule->start_time,
+                        'end' => $schedule->date . 'T' . $schedule->end_time,
+                        // Fullcalendar properties
+                        'extendedProps' => [
+                            'lab_name' => $schedule->lab->name ?? '-',
+                            'activity' => $schedule->activity,
+                            'creator' => $schedule->creator->name ?? '-',
+                            'description' => 'Kalibrasi di ' . ($schedule->lab->name ?? '-')
+                        ],
+                        'color' => '#8b5cf6' // Purple
+                    ];
+                });
         }
 
-        if (request()->has('status') && request('status') !== 'all') {
-            $statusSlug = request('status');
-            $rentalsQuery->whereHas('status', function ($q) use ($statusSlug) {
-                $q->where('slug', $statusSlug);
-            });
-        }
-
-        $rentals = $rentalsQuery->get();
-
-        $labs = [];
-        if ($user->role === 'admin') {
-            $labs = Lab::where('admin_id', $user->id)->get();
-        } elseif ($user->role === 'superadmin') {
-            $labs = Lab::whereHas('type', function ($q) {
-                $q->where('slug', 'kalibrasi');
-            })->get();
-        }
-
-        // Fetch return dates for markers
-        $returnDates = $rentalsQuery->clone()
-            ->reorder()
-            ->whereHas('status', function ($q) {
-                $q->whereIn('slug', ['pending', 'approved']);
-            })
-            ->selectRaw('DISTINCT return_date')
-            ->pluck('return_date')
-            ->map(fn($d) => \Carbon\Carbon::parse($d)->format('Y-m-d'))
-            ->toArray();
-
-        $rentalStatuses = RentalStatus::all();
-
-        return view('lab_rentals.index', compact('rentals', 'labs', 'returnDates', 'rentalStatuses'));
+        return view('lab_rentals.index', compact('schedules'));
     }
 
     public function store(Request $request)

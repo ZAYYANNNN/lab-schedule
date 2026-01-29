@@ -26,6 +26,30 @@
 
     <div class="max-w-[1600px] mx-auto py-6 px-4 sm:px-6 lg:px-8" x-data="borrowingPage()">
 
+        {{-- Flash Messages --}}
+        @if(session('success'))
+            <div class="mb-4 bg-emerald-100 border border-emerald-400 text-emerald-700 px-4 py-3 rounded-2xl relative shadow-sm"
+                role="alert">
+                <span class="block sm:inline font-bold">{{ session('success') }}</span>
+            </div>
+        @endif
+        @if(session('error'))
+            <div class="mb-4 bg-rose-100 border border-rose-400 text-rose-700 px-4 py-3 rounded-2xl relative shadow-sm"
+                role="alert">
+                <span class="block sm:inline font-bold">{{ session('error') }}</span>
+            </div>
+        @endif
+        @if($errors->any())
+            <div class="mb-4 bg-rose-100 border border-rose-400 text-rose-700 px-4 py-3 rounded-2xl relative shadow-sm"
+                role="alert">
+                <ul class="list-disc list-inside">
+                    @foreach ($errors->all() as $error)
+                        <li class="font-bold text-sm">{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
         {{-- Modern Gradient Header --}}
         <div
             class="bg-gradient-to-br from-blue-700 via-indigo-600 to-blue-700 rounded-[2rem] p-6 sm:p-10 mb-8 shadow-2xl shadow-blue-200 relative overflow-hidden transition-all duration-700 hover:shadow-blue-300/50">
@@ -102,20 +126,33 @@
                         <h2 class="font-black text-slate-800 uppercase text-xs tracking-[0.2em]">Daftar Lab</h2>
                     </div>
 
+                    {{-- Lab Search Input --}}
+                    <div class="mb-3 relative">
+                        <span
+                            class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">search</span>
+                        <input type="text" x-model="labSearchTerm" placeholder="Cari lab..."
+                            class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none">
+                    </div>
+
                     <div class="overflow-y-auto scrollbar-thin space-y-2 flex-1 pr-1">
+                        {{-- Semua Lab option --}}
                         <div @click="selectedLabId = null"
                             :class="!selectedLabId ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' : 'text-slate-500 hover:bg-slate-50 hover:text-indigo-600'"
                             class="p-3 cursor-pointer transition-all rounded-xl border border-transparent flex items-center gap-3 font-bold text-xs">
                             <span class="truncate">Semua Lab</span>
                         </div>
 
-                        @foreach($allLabsFlat as $lab)
-                            <div @click="selectedLabId = '{{ $lab->id }}'"
-                                :class="selectedLabId === '{{ $lab->id }}' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' : 'text-slate-500 hover:bg-slate-50 hover:text-indigo-600'"
+                        {{-- Filtered Lab list --}}
+                        <template x-for="lab in filteredLabsForSearch" :key="lab.id">
+                            <div @click="selectedLabId = String(lab.id)"
+                                :class="selectedLabId === String(lab.id) ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' : 'text-slate-500 hover:bg-slate-50 hover:text-indigo-600'"
                                 class="p-3 cursor-pointer transition-all rounded-xl border border-transparent flex items-center gap-3 font-bold text-xs group">
-                                <span class="truncate">{{ $lab->name }}</span>
+                                <span class="truncate" x-text="lab.name"></span>
                             </div>
-                        @endforeach
+                        </template>
+                        <template x-if="labSearchTerm.length > 0 && filteredLabsForSearch.length === 0">
+                            <p class="text-xs text-center text-gray-400 py-2">Lab tidak ditemukan</p>
+                        </template>
                     </div>
                 </div>
 
@@ -155,8 +192,11 @@
                         <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                             <h2 class="font-black text-slate-800 uppercase text-xs tracking-[0.2em]">Data Peminjaman
                             </h2>
-                            <div class="text-sm text-slate-400 font-medium">
+                            <div class="text-sm text-slate-400 font-medium flex items-center gap-3">
                                 <span x-text="filteredBorrowings.length + ' entri'"></span>
+                                <span x-show="filteredBorrowings.length > perPage" class="text-xs">
+                                    | Halaman <span x-text="currentPage"></span> dari <span x-text="totalPages"></span>
+                                </span>
                             </div>
                         </div>
                         <div class="overflow-x-auto scrollbar-none">
@@ -181,7 +221,7 @@
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-50">
-                                    <template x-for="b in filteredBorrowings" :key="b.id">
+                                    <template x-for="b in paginatedBorrowings" :key="b.id">
                                         <tr class="hover:bg-blue-50/30 transition-all duration-300 group animate-fade-in-down"
                                             :class="{'bg-rose-50/30': isOverdue(b)}">
                                             <td class="px-6 py-4">
@@ -269,6 +309,36 @@
                                     </tr>
                                 </tbody>
                             </table>
+                        </div>
+
+                        {{-- Pagination Controls --}}
+                        <div x-show="filteredBorrowings.length > perPage" x-cloak
+                            class="px-6 py-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/30">
+                            <div class="text-xs text-slate-400">
+                                Menampilkan <span x-text="((currentPage - 1) * perPage) + 1"></span> -
+                                <span x-text="Math.min(currentPage * perPage, filteredBorrowings.length)"></span>
+                                dari <span x-text="filteredBorrowings.length"></span> data
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button @click="currentPage = Math.max(1, currentPage - 1)"
+                                    :disabled="currentPage === 1"
+                                    :class="currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-50 hover:text-blue-600'"
+                                    class="px-3 py-2 rounded-lg text-xs font-bold text-slate-500 border border-slate-200 transition-all">
+                                    <span class="material-symbols-outlined text-[14px]">chevron_left</span>
+                                </button>
+                                <template x-for="page in visiblePageNumbers" :key="page">
+                                    <button @click="currentPage = page"
+                                        :class="currentPage === page ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-blue-50 hover:text-blue-600'"
+                                        class="w-8 h-8 rounded-lg text-xs font-bold border border-slate-200 transition-all"
+                                        x-text="page"></button>
+                                </template>
+                                <button @click="currentPage = Math.min(totalPages, currentPage + 1)"
+                                    :disabled="currentPage === totalPages"
+                                    :class="currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-50 hover:text-blue-600'"
+                                    class="px-3 py-2 rounded-lg text-xs font-bold text-slate-500 border border-slate-200 transition-all">
+                                    <span class="material-symbols-outlined text-[14px]">chevron_right</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -394,6 +464,8 @@
                                 <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-1">Nomor
                                     Identitas</label>
                                 <input type="text" name="nomor_identitas" x-model="form.nomor_identitas" required
+                                    @keypress="$event.charCode >= 48 && $event.charCode <= 57 || $event.preventDefault()"
+                                    oninput="this.value = this.value.replace(/[^0-9]/g, '')" minlength="5"
                                     class="w-full px-4 py-3 bg-slate-50 border-slate-100 rounded-xl text-sm font-bold focus:bg-white focus:ring-2 focus:ring-blue-500 transition-all">
                             </div>
                             <div class="space-y-1">
@@ -495,6 +567,7 @@
                         filterStatus: '',
                         filterDate: '',
                         selectedLabId: null,
+                        labSearchTerm: '',
                         form: {
                             id: '',
                             nama_peminjam: '',
@@ -516,6 +589,56 @@
 
                         get allLabs() {
                             return this.labs || [];
+                        },
+
+                        // Pagination properties
+                        perPage: 5,
+                        currentPage: 1,
+
+                        get totalPages() {
+                            return Math.ceil(this.filteredBorrowings.length / this.perPage);
+                        },
+
+                        get paginatedBorrowings() {
+                            const start = (this.currentPage - 1) * this.perPage;
+                            const end = start + this.perPage;
+                            return this.filteredBorrowings.slice(start, end);
+                        },
+
+                        get visiblePageNumbers() {
+                            const pages = [];
+                            const total = this.totalPages;
+                            const current = this.currentPage;
+                            
+                            let start = Math.max(1, current - 2);
+                            let end = Math.min(total, current + 2);
+                            
+                            // Ensure we show at least 5 pages if available
+                            if (end - start < 4) {
+                                if (start === 1) {
+                                    end = Math.min(total, start + 4);
+                                } else if (end === total) {
+                                    start = Math.max(1, end - 4);
+                                }
+                            }
+                            
+                            for (let i = start; i <= end; i++) {
+                                pages.push(i);
+                            }
+                            return pages;
+                        },
+
+                        get filteredLabsForSearch() {
+                            if (this.labSearchTerm === '') return this.allLabs;
+                            return this.allLabs.filter(lab =>
+                                lab.name.toLowerCase().includes(this.labSearchTerm.toLowerCase())
+                            );
+                        },
+
+                        getSelectedLabName() {
+                            if (!this.selectedLabId) return '';
+                            const lab = this.allLabs.find(l => String(l.id) === String(this.selectedLabId));
+                            return lab ? lab.name : '';
                         },
 
                         get filteredBorrowings() {

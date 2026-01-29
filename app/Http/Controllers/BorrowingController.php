@@ -128,6 +128,14 @@ class BorrowingController extends Controller
         // Shows all overdue and late returned items, independent of main filter
         $lateReportItems = $overdueItems->merge($lateReturnedItems)->values();
 
+        // Ensure we don't have duplicates manually (merge should handle it if same models, but values ensures reset keys)
+        // If needed, we can directy query:
+        /*
+        $lateReportItems = $baseQuery->clone()->get()->filter(function($b) {
+             return $b->isOverdue() || ($b->status->slug === 'returned' && $b->getLateDuration() !== null);
+        })->values();
+        */
+
         $borrowingStatuses = BorrowingStatus::all();
 
         return view('borrowings.index', compact(

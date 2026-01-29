@@ -37,9 +37,9 @@ class ScheduleController extends Controller
             $selectedProdiIds = $request->get('prodi_ids', []);
             $selectedLabIds = $request->get('lab_ids', []);
         } else {
-            // Default: All checked
-            $selectedProdiIds = $allProdiIds;
-            $selectedLabIds = $allLabIds;
+            // Default: Nothing checked (as requested)
+            $selectedProdiIds = [];
+            $selectedLabIds = [];
         }
 
         // Ensure they are arrays
@@ -79,7 +79,7 @@ class ScheduleController extends Controller
         $labs = $labQuery->get();
 
         // Query Schedules for the selected date
-        $scheduleQuery = \App\Models\Schedules::with(['lab.prodi', 'creator'])
+        $scheduleQuery = \App\Models\Schedules::with(['lab.prodi', 'creator', 'activityType'])
             ->whereDate('date', $selectedDate)
             ->orderBy('start_time');
 
@@ -133,6 +133,49 @@ class ScheduleController extends Controller
         ]);
     }
 
+    public function calibration(Request $request)
+    {
+        $user = auth()->user();
+        $q = $request->search; // Search Lab Name
+
+        // Get Calibration Activity Type ID
+        $calibrationType = \App\Models\ActivityType::where('name', 'Kalibrasi')->first();
+
+        if (!$calibrationType) {
+            abort(500, 'Activity Type "Kalibrasi" not found.');
+        }
+
+        $schedules = \App\Models\Schedules::query()
+            ->with(['lab', 'creator', 'activityType'])
+            ->where('activity_type_id', $calibrationType->id)
+            ->when($q, function ($query) use ($q) {
+                $query->whereHas('lab', function ($subQuery) use ($q) {
+                    $subQuery->where('name', 'like', "%{$q}%");
+                });
+            })
+            ->orderBy('date')
+            ->orderBy('start_time')
+            ->get()
+            ->map(function ($schedule) {
+                return [
+                    'id' => $schedule->id,
+                    'title' => $schedule->activity . ' (' . ($schedule->lab->name ?? 'Unknown Lab') . ')',
+                    'start' => $schedule->date . 'T' . $schedule->start_time,
+                    'end' => $schedule->date . 'T' . $schedule->end_time,
+                    // Fullcalendar properties
+                    'extendedProps' => [
+                        'lab_name' => $schedule->lab->name ?? '-',
+                        'activity' => $schedule->activity,
+                        'creator' => $schedule->creator->name ?? '-',
+                        'description' => 'Kalibrasi di ' . ($schedule->lab->name ?? '-')
+                    ],
+                    'color' => '#8b5cf6' // Purple color from user image
+                ];
+            });
+
+        return view('schedules.calibration', compact('schedules'));
+    }
+
     public function create()
     {
         if (auth()->user()->role === 'superadmin') {
@@ -146,7 +189,9 @@ class ScheduleController extends Controller
             }
         }
 
-        return view('schedules.create', compact('labs'));
+        $activityTypes = \App\Models\ActivityType::all();
+
+        return view('schedules.create', compact('labs', 'activityTypes'));
     }
 
     public function store(Request $request)
@@ -157,6 +202,7 @@ class ScheduleController extends Controller
             'start_time' => 'required',
             'end_time' => 'required|after:start_time',
             'activity' => 'required|string|max:255',
+            'activity_type_id' => 'required|exists:activity_types,id',
         ]);
 
         // Conflict Detection
@@ -164,8 +210,6 @@ class ScheduleController extends Controller
             ->whereDate('date', $request->date)
             ->where(function ($query) use ($request) {
                 // Check for overlapping time
-                // A new schedule (StartA, EndA) overlaps with existing (StartB, EndB) if:
-                // StartA < EndB AND EndA > StartB
                 $query->where('start_time', '<', $request->end_time)
                     ->where('end_time', '>', $request->start_time);
             })
@@ -176,9 +220,14 @@ class ScheduleController extends Controller
         }
 
         $validated['created_by'] = auth()->id();
-        \App\Models\Schedules::create($validated);
+        $schedule = \App\Models\Schedules::create($validated);
 
-        return redirect()->route('schedules.index')->with('success', 'Schedule created successfully.');
+        // Redirect with the lab_ids filter so the new schedule is visible
+        return redirect()->route('schedules.index', [
+            'date' => $validated['date'],
+            'lab_ids' => [$validated['lab_id']],
+            'filter_submitted' => 1
+        ])->with('success', 'Jadwal berhasil ditambahkan.');
     }
 
     public function edit(\App\Models\Schedules $schedule)
@@ -198,7 +247,9 @@ class ScheduleController extends Controller
             }
         }
 
-        return view('schedules.edit', compact('schedule', 'labs'));
+        $activityTypes = \App\Models\ActivityType::all();
+
+        return view('schedules.edit', compact('schedule', 'labs', 'activityTypes'));
     }
 
     public function update(Request $request, \App\Models\Schedules $schedule)
@@ -213,11 +264,12 @@ class ScheduleController extends Controller
             'start_time' => 'required',
             'end_time' => 'required|after:start_time',
             'activity' => 'required|string|max:255',
+            'activity_type_id' => 'required|exists:activity_types,id',
         ]);
 
         $schedule->update($validated);
 
-        return redirect()->route('schedules.index')->with('success', 'Schedule updated successfully.');
+        return redirect()->back()->with('success', 'Schedule updated successfully.');
     }
 
     public function destroy(\App\Models\Schedules $schedule)
