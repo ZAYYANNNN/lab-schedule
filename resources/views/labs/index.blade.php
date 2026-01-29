@@ -12,12 +12,7 @@
                 Daftar Lab
             </h2>
 
-            @if(auth()->user()->role === 'superadmin')
-                <button @click="openCreate = true"
-                    class="bg-blue-600 text-white px-5 py-2 rounded-lg shadow hover:bg-blue-700 transition text-base font-medium">
-                    + Tambah Lab
-                </button>
-            @endif
+
         </div>
 
         <p class="max-w-7xl mx-auto sm:px-6 lg:px-8 px-1 text-gray-600 text-base font-normal -mt-1">
@@ -55,7 +50,7 @@
                         </span>
 
                         <input type="text" x-model="keyword" @input.debounce.350ms="doSearch()"
-                            placeholder="Cari berdasarkan Nama, Kode, atau Lokasi Lab..."
+                            placeholder="Cari berdasarkan Nama, Kode, Lokasi, atau Tipe Lab..."
                             class="w-full border border-gray-300 pl-11 pr-4 py-2.5 rounded-lg">
                     </div>
                 </div>

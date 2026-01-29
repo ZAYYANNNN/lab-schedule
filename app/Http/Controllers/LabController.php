@@ -30,12 +30,17 @@ class LabController extends Controller
                 $q2->where(function ($wh) use ($q) {
                     $wh->where('name', 'like', "%$q%")
                         ->orWhere('kode_lab', 'like', "%$q%")
-                        ->orWhere('lokasi', 'like', "%$q%");
+                        ->orWhere('lokasi', 'like', "%$q%")
+                        ->orWhereHas('type', fn($typeQ) => $typeQ->where('name', 'like', "%$q%"));
                 });
             })
             ->orderBy('name');
 
         $labs = $query->get();
+
+        if ($r->ajax() || $r->wantsJson()) {
+            return response()->json($labs);
+        }
 
         // 🔹 AMBIL DATA PRODI DARI DATABASE
         // 🔹 AMBIL DATA PRODI DARI DATABASE (ID & NAME)
